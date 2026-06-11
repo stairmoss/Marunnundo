@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarunnUndo - Kerala Proximity Pharmacy Finder</title>
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Find nearby medical shops in Kerala, check medicine stock availability, and directly query pharmacies via WhatsApp.">
+  <meta name="keywords" content="pharmacy, medical shop, Kerala, medicine stock, WhatsApp, Leaflet map, MarunnUndo">
+  <meta name="author" content="MarunnUndo Team">
+  
+  <!-- Google Fonts: Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        
+  <!-- Custom CSS Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Container -->
+  <div class="app-container">
+    
+    <!-- Floating Search & Info Panel -->
+    <div class="floating-panel">
+      <!-- Header -->
+      <header class="panel-header">
+        <div class="logo-area">
+          <svg class="med-cross-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 10.5H13.5V5C13.5 4.17157 12.8284 3.5 12 3.5C11.1716 3.5 10.5 4.17157 10.5 5V10.5H5C4.17157 10.5 3.5 11.1716 3.5 12C3.5 12.8284 4.17157 13.5 5 13.5H10.5V19C10.5 19.8284 11.1716 20.5 12 20.5C12.8284 20.5 13.5 19.8284 13.5 19V13.5H19C19.8284 13.5 20.5 12.8284 20.5 12C20.5 11.1716 19.8284 10.5 19 10.5Z" 
+                  fill="currentColor"/>
+          </svg>
+          <div class="title-wrap">
+            <h1>MarunnUndo</h1>
+            <span class="sub-title">മരുന്നുണ്ടോ?</span>
+          </div>
+        </div>
+        <p class="tagline">Verify medicine stock at nearby pharmacies instantly.</p>
+      </header>
+
+      <!-- Search Box Section -->
+      <div class="search-section">
+        <div class="input-container">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" 
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <input type="text" id="medicine-search" placeholder="Type medicine name (e.g., Insulin, Paracetamol)..." autocomplete="off">
+        </div>
+      </div>
+
+      <!-- Live Location & Scan Info -->
+      <div class="status-section">
+        <div class="status-indicator">
+          <span class="status-dot pulse" id="location-dot"></span>
+          <span id="status-text">Detecting geolocation...</span>
+        </div>
+        <div class="coord-info" id="coord-display">--.----, --.----</div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="actions-section">
+        <button id="btn-scan" class="action-btn" disabled>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.657 16.657L13.414 20.9C12.633 21.681 11.367 21.681 10.586 20.9L6.343 16.657C4.586 14.9 4.586 12.043 6.343 10.286C8.1 8.529 10.957 8.529 12.714 10.286L17.657 15.229C18.438 16.01 18.438 17.276 17.657 18.057C16.876 18.838 15.61 18.838 14.829 18.057L11.293 14.522C11.105 14.334 10.795 14.334 10.607 14.522C10.419 14.71 10.419 15.02 10.607 15.208L14.143 18.743C15.705 20.305 18.238 20.305 19.8 18.743C21.362 17.181 21.362 14.648 19.8 13.086L14.857 8.143C12.318 5.604 8.204 5.604 5.665 8.143C3.126 10.682 3.126 14.796 5.665 17.335L9.908 21.578M15 3H21M21 3V9M21 3L14 10" 
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Scan This Area
+        </button>
+      </div>
+
+      <!-- Stores List Container -->
+      <div class="results-container">
+        <div class="results-header">
+          <h3>Nearby Pharmacies</h3>
+          <span class="badge" id="results-count">0 found</span>
+        </div>
+        <div class="list-placeholder" id="list-placeholder">
+          Please allow location access to discover shops.
+        </div>
+        <ul class="pharmacies-list" id="pharmacies-list">
+          <!-- Populated dynamically via JS -->
+        </ul>
+      </div>
+
+      <!-- Footer / Info -->
+      <footer class="panel-footer">
+        <span>MarunnUndo © 2026. Made for Kerala.</span>
+      </footer>
+    </div>
+
+    <!-- Leaflet Map Div -->
+    <div id="map"></div>
+
+  </div>
+
+  <!-- Leaflet JS Dependency -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+          
+  <!-- Custom App JS -->
+  <script src="app.js"></script>
+</body>
+</html>
