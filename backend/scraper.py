@@ -24,8 +24,12 @@ def fetch_from_overpass(lat: float, lon: float, radius_km: float = 5.0) -> list:
     """
     
     url = "https://overpass-api.de/api/interpreter"
+    headers = {
+        "User-Agent": "MarunnUndoProximityFinder/1.0 (contact@marunnundo.in)",
+        "Accept": "application/json"
+    }
     try:
-        response = httpx.post(url, data={"data": query}, timeout=30.0)
+        response = httpx.post(url, data={"data": query}, headers=headers, timeout=30.0)
         if response.status_code != 200:
             print(f"[Overpass] Error: status code {response.status_code}")
             return []
