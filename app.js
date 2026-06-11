@@ -63,20 +63,112 @@ window.addEventListener('DOMContentLoaded', () => {
 // Initialize Leaflet Map
 function initMap(lat, lon) {
   // CartoDB Positron: Clean, minimal light grey & white tiles
-  map = L.map('map', {
-    zoomControl: false
-  }).setView([lat, lon], 14);
-  
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 20
-  }).addTo(map);
+  });
+
+  // Esri World Imagery: Beautiful, high-resolution satellite imagery
+  const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxZoom: 19
+  });
+
+  map = L.map('map', {
+    zoomControl: false,
+    layers: [streetLayer]
+  }).setView([lat, lon], 14);
   
   // Reposition zoom control to bottom right
   L.control.zoom({
     position: 'bottomright'
   }).addTo(map);
+
+  // Satellite Toggle Control (Google Maps style)
+  const layerToggle = L.Control.extend({
+    options: {
+      position: 'bottomright'
+    },
+    onAdd: function (map) {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control custom-layer-control');
+      container.style.backgroundColor = 'white';
+      container.style.width = '62px';
+      container.style.height = '62px';
+      container.style.borderRadius = '8px';
+      container.style.border = '2.5px solid white';
+      container.style.boxShadow = '0 2px 8px rgba(0,0,0,0.25)';
+      container.style.cursor = 'pointer';
+      container.style.overflow = 'hidden';
+      container.style.position = 'relative';
+      container.style.transition = 'transform 0.15s ease, border-color 0.15s ease';
+      container.title = 'Switch Map View';
+      
+      const img = L.DomUtil.create('div', 'layer-thumbnail', container);
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.backgroundSize = 'cover';
+      img.style.backgroundPosition = 'center';
+      
+      const label = L.DomUtil.create('div', 'layer-label', container);
+      label.style.position = 'absolute';
+      label.style.bottom = '0';
+      label.style.left = '0';
+      label.style.right = '0';
+      label.style.backgroundColor = 'rgba(15, 23, 42, 0.8)';
+      label.style.color = 'white';
+      label.style.fontSize = '9px';
+      label.style.fontWeight = '700';
+      label.style.textAlign = 'center';
+      label.style.padding = '2px 0';
+      label.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      
+      let currentMode = 'street';
+      
+      const updateControl = () => {
+        if (currentMode === 'street') {
+          // Show Satellite thumbnail preview
+          img.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/30/45')";
+          label.textContent = 'Satellite';
+        } else {
+          // Show Map thumbnail preview
+          img.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/light_all/6/30/45.png')";
+          label.textContent = 'Map';
+        }
+      };
+      
+      updateControl();
+      
+      L.DomEvent.disableClickPropagation(container);
+      
+      // Interactive scale on hover
+      L.DomEvent.on(container, 'mouseover', () => {
+        container.style.transform = 'scale(1.06)';
+        container.style.borderColor = '#1a73e8';
+      });
+      L.DomEvent.on(container, 'mouseout', () => {
+        container.style.transform = 'scale(1)';
+        container.style.borderColor = 'white';
+      });
+      
+      L.DomEvent.on(container, 'click', () => {
+        if (currentMode === 'street') {
+          map.removeLayer(streetLayer);
+          map.addLayer(satelliteLayer);
+          currentMode = 'satellite';
+        } else {
+          map.removeLayer(satelliteLayer);
+          map.addLayer(streetLayer);
+          currentMode = 'street';
+        }
+        updateControl();
+      });
+      
+      return container;
+    }
+  });
+  
+  map.addControl(new layerToggle());
 
   // Click map to set custom scan center
   map.on('click', (e) => {
@@ -93,7 +185,7 @@ function initMap(lat, lon) {
 
 // Request Geolocation from Browser
 function requestUserLocation() {
-  statusText.textContent = "Requesting geolocation access...";
+  statusText.textContent = "Detecting your real location...";
   
   if (!navigator.geolocation) {
     updateStatus("denied", "Geolocation not supported by browser.");
@@ -101,31 +193,46 @@ function requestUserLocation() {
     return;
   }
   
+  // First attempt: High accuracy (GPS/Wi-Fi positioning)
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      userCoords.lat = position.coords.latitude;
-      userCoords.lon = position.coords.longitude;
-      
-      updateStatus("active", "Location synchronized successfully");
-      coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
-      
-      // Update User Marker on Map
-      updateUserMarker(userCoords.lat, userCoords.lon);
-      map.setView([userCoords.lat, userCoords.lon], 14);
-      
-      // Enable Manual Scan Button
-      btnScan.removeAttribute('disabled');
-      
-      // Fetch Nearby Stores
-      fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
+      usePosition(position, "Real Location");
     },
     (error) => {
-      console.warn("Geolocation error:", error.message);
-      updateStatus("denied", "Location access denied. Using fallback.");
-      fallbackToDefaultLocation();
+      console.warn("High-accuracy geolocation failed, trying fast low-accuracy...", error.message);
+      // Second attempt: Low accuracy (IP address estimation)
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          usePosition(position, "Approx Location");
+        },
+        (lowAccError) => {
+          console.warn("Low-accuracy geolocation failed, using fallback...", lowAccError.message);
+          updateStatus("denied", "Location access denied. Using fallback.");
+          fallbackToDefaultLocation();
+        },
+        { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
+      );
     },
-    { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+    { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
   );
+}
+
+function usePosition(position, label) {
+  userCoords.lat = position.coords.latitude;
+  userCoords.lon = position.coords.longitude;
+  
+  updateStatus("active", `${label} synchronized`);
+  coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
+  
+  // Update User Marker on Map
+  updateUserMarker(userCoords.lat, userCoords.lon);
+  map.setView([userCoords.lat, userCoords.lon], 14);
+  
+  // Enable Manual Scan Button
+  btnScan.removeAttribute('disabled');
+  
+  // Fetch Nearby Stores
+  fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
 }
 
 // Fallback to Kochi coords if location fails
@@ -344,7 +451,7 @@ function renderStores(storesList) {
 function createPopupHTML(store, medicineName) {
   const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
   const sourceClass = store.source === "Verified" ? "source-verified" : "source-sync";
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + " " + store.address)}`;
+  const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
   
   // Custom button behavior based on phone existence
   let contactBtnHTML = "";
@@ -376,7 +483,7 @@ function createPopupHTML(store, medicineName) {
       <p class="popup-addr">${store.address}</p>
       <div class="popup-actions-row">
         ${contactBtnHTML}
-        <a href="${googleMapsUrl}" target="_blank" class="popup-gmaps-btn">
+        <a href="${googleSearchUrl}" target="_blank" class="popup-gmaps-btn">
           <svg class="gmaps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
             <circle cx="12" cy="10" r="3"></circle>
             <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
@@ -394,7 +501,7 @@ function createListItemHTML(store, index, medicineName) {
   li.className = 'pharmacy-card';
   
   const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + " " + store.address)}`;
+  const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
   const sourceClass = store.source === "Verified" ? "source-verified" : "source-sync";
   
   // Custom button depending on phone number
@@ -428,7 +535,7 @@ function createListItemHTML(store, index, medicineName) {
     </div>
     <div class="card-actions">
       ${actionHTML}
-      <a href="${googleMapsUrl}" target="_blank" class="card-gmaps-btn" title="View Google Reviews & Details">
+      <a href="${googleSearchUrl}" target="_blank" class="card-gmaps-btn" title="View Google Reviews & Details">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="10" r="3"></circle>
           <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
