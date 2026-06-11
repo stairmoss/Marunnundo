@@ -8,6 +8,7 @@ let userCoords = { lat: 9.9312, lon: 76.2673 }; // Default Kochi, Kerala
 
 // DOM Elements
 const searchInput = document.getElementById('medicine-search');
+const placeInput = document.getElementById('place-search');
 const statusDot = document.getElementById('location-dot');
 const statusText = document.getElementById('status-text');
 const coordDisplay = document.getElementById('coord-display');
@@ -51,6 +52,11 @@ window.addEventListener('DOMContentLoaded', () => {
   
   // Set up event listeners
   searchInput.addEventListener('input', filterStores);
+  placeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      searchLocation(placeInput.value.trim());
+    }
+  });
   btnScan.addEventListener('click', handleManualScan);
 });
 
@@ -118,7 +124,7 @@ function requestUserLocation() {
       updateStatus("denied", "Location access denied. Using fallback.");
       fallbackToDefaultLocation();
     },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
   );
 }
 
@@ -129,6 +135,46 @@ function fallbackToDefaultLocation() {
   map.setView([userCoords.lat, userCoords.lon], 13);
   btnScan.removeAttribute('disabled');
   fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
+}
+
+// Search location using Nominatim Geocoding API
+async function searchLocation(query) {
+  if (!query) return;
+  
+  updateStatus("scanning", `Searching for "${query}"...`);
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query + ", Kerala, India")}`;
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "MarunnUndoProximityFinder/1.0"
+      }
+    });
+    
+    if (!response.ok) throw new Error("Search server error");
+    
+    const results = await response.json();
+    if (results && results.length > 0) {
+      const lat = parseFloat(results[0].lat);
+      const lon = parseFloat(results[0].lon);
+      
+      userCoords.lat = lat;
+      userCoords.lon = lon;
+      
+      const displayName = results[0].display_name.split(',')[0];
+      updateStatus("active", `Showing: ${displayName}`);
+      coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Searched)`;
+      
+      // Update map center and search
+      updateUserMarker(userCoords.lat, userCoords.lon);
+      map.setView([userCoords.lat, userCoords.lon], 14);
+      fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
+    } else {
+      updateStatus("denied", "Place not found. Try another name.");
+    }
+  } catch (error) {
+    console.error("Geocoding failed:", error);
+    updateStatus("denied", "Search failed. Check connection.");
+  }
 }
 
 // Update Geolocation Status UI
@@ -180,11 +226,10 @@ async function fetchNearbyPharmacies(lat, lon) {
 async function fetchDirectFromOverpass(lat, lon) {
   const radiusMeters = 5000; // 5km
   const query = `
-    [out:json][timeout:25];
+    [out:json][timeout:15];
     (
       node["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
       way["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
-      relation["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
     );
     out center;
   `;
@@ -202,7 +247,14 @@ async function fetchDirectFromOverpass(lat, lon) {
   const data = await response.json();
   const elements = data.elements || [];
   
-  return elements.map(elem => {
+  // Filter out any elements lacking valid coordinates
+  const validElements = elements.filter(elem => {
+    const lat = elem.lat || (elem.center && elem.center.lat);
+    const lon = elem.lon || (elem.center && elem.center.lon);
+    return lat !== undefined && lon !== undefined && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon));
+  });
+  
+  return validElements.map(elem => {
     const elemLat = elem.lat || (elem.center && elem.center.lat);
     const elemLon = elem.lon || (elem.center && elem.center.lon);
     

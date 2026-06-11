@@ -45,12 +45,21 @@
 
       <!-- Search Box Section -->
       <div class="search-section">
+        <!-- Place Search Input -->
+        <div class="input-container" style="margin-bottom: 12px;">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <input type="text" id="place-search" placeholder="Search place/city (e.g., Aluva, Trivandrum)..." autocomplete="off">
+        </div>
+        <!-- Medicine Search / Filter Input -->
         <div class="input-container">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" 
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <input type="text" id="medicine-search" placeholder="Type medicine name (e.g., Insulin, Paracetamol)..." autocomplete="off">
+          <input type="text" id="medicine-search" placeholder="Type medicine name (e.g., Insulin)..." autocomplete="off">
         </div>
       </div>
 
@@ -90,7 +99,7 @@
 
       <!-- Footer / Info -->
       <footer class="panel-footer">
-        <span>MarunnUndo © 2026. Made for Kerala.</span>
+        <span>MarunnUndo Made for Kerala.</span>
       </footer>
     </div>
 

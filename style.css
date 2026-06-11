@@ -132,7 +132,7 @@ html, body {
   pointer-events: none;
 }
 
-#medicine-search {
+#medicine-search, #place-search {
   width: 100%;
   padding: 14px 14px 14px 44px;
   font-size: 0.95rem;
@@ -144,7 +144,7 @@ html, body {
   transition: all 0.2s ease;
 }
 
-#medicine-search:focus {
+#medicine-search:focus, #place-search:focus {
   border-color: var(--primary);
   background-color: var(--white);
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
