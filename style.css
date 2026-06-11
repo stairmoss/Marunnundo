@@ -436,6 +436,35 @@ html, body {
   color: var(--white);
 }
 
+.card-gmaps-btn {
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px solid var(--border-light);
+  color: var(--text-muted);
+  background-color: var(--white);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-gmaps-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.card-gmaps-btn:hover {
+  border-color: #1a73e8;
+  color: #1a73e8;
+  background-color: rgba(26, 115, 232, 0.05);
+  box-shadow: 0 4px 8px rgba(26, 115, 232, 0.1);
+}
+
 /* Panel Footer */
 .panel-footer {
   padding: 12px 20px;
@@ -540,12 +569,18 @@ html, body {
   line-height: 1.4;
 }
 
+.popup-actions-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .popup-wa-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
+  flex: 1;
   padding: 10px;
   background-color: var(--primary);
   color: var(--white) !important;
@@ -568,6 +603,32 @@ html, body {
 .popup-wa-btn.secondary-btn {
   background-color: var(--text-dark);
   box-shadow: 0 4px 6px rgba(15, 23, 42, 0.1);
+}
+
+.popup-gmaps-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  padding: 10px;
+  border: 1.5px solid var(--border-light);
+  color: var(--text-muted) !important;
+  background-color: var(--white);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.popup-gmaps-btn:hover {
+  border-color: #1a73e8;
+  color: #1a73e8 !important;
+  background-color: rgba(26, 115, 232, 0.05);
+  box-shadow: 0 4px 6px rgba(26, 115, 232, 0.1);
 }
 
 .popup-wa-btn.secondary-btn:hover {

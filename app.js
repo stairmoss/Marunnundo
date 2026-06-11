@@ -344,6 +344,7 @@ function renderStores(storesList) {
 function createPopupHTML(store, medicineName) {
   const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
   const sourceClass = store.source === "Verified" ? "source-verified" : "source-sync";
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + " " + store.address)}`;
   
   // Custom button behavior based on phone existence
   let contactBtnHTML = "";
@@ -373,7 +374,16 @@ function createPopupHTML(store, medicineName) {
       </div>
       <p class="popup-distance">📍 ${store.distance} km away</p>
       <p class="popup-addr">${store.address}</p>
-      ${contactBtnHTML}
+      <div class="popup-actions-row">
+        ${contactBtnHTML}
+        <a href="${googleMapsUrl}" target="_blank" class="popup-gmaps-btn">
+          <svg class="gmaps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
+            <circle cx="12" cy="10" r="3"></circle>
+            <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+          </svg>
+          Google Details
+        </a>
+      </div>
     </div>
   `;
 }
@@ -384,6 +394,7 @@ function createListItemHTML(store, index, medicineName) {
   li.className = 'pharmacy-card';
   
   const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + " " + store.address)}`;
   const sourceClass = store.source === "Verified" ? "source-verified" : "source-sync";
   
   // Custom button depending on phone number
@@ -417,6 +428,13 @@ function createListItemHTML(store, index, medicineName) {
     </div>
     <div class="card-actions">
       ${actionHTML}
+      <a href="${googleMapsUrl}" target="_blank" class="card-gmaps-btn" title="View Google Reviews & Details">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="10" r="3"></circle>
+          <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+        </svg>
+        <span>Google Info</span>
+      </a>
     </div>
   `;
   
