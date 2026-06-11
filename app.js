@@ -1,6 +1,5 @@
 // MarunnUndo Client Application
 
-const API_BASE = window.location.origin;
 let map;
 let userMarker;
 let storeMarkers = [];
@@ -72,6 +71,18 @@ function initMap(lat, lon) {
   L.control.zoom({
     position: 'bottomright'
   }).addTo(map);
+
+  // Click map to set custom scan center
+  map.on('click', (e) => {
+    userCoords.lat = e.latlng.lat;
+    userCoords.lon = e.latlng.lng;
+    
+    updateStatus("scanning", "Scanning selected location...");
+    coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Selected)`;
+    
+    updateUserMarker(userCoords.lat, userCoords.lon);
+    fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
+  });
 }
 
 // Request Geolocation from Browser
@@ -138,61 +149,106 @@ function updateStatus(type, text) {
 function updateUserMarker(lat, lon) {
   if (userMarker) {
     userMarker.setLatLng([lat, lon]);
+    userMarker.setPopupContent("<b>Scan Center Location</b>");
   } else {
     userMarker = L.marker([lat, lon], { icon: userMarkerIcon }).addTo(map);
-    userMarker.bindPopup("<b>Your Current Location</b>").openPopup();
+    userMarker.bindPopup("<b>Scan Center Location</b>").openPopup();
   }
 }
 
-// Fetch pharmacies from local backend API
+// Fetch pharmacies directly from OSM Overpass (No-Database / Serverless Mode)
 async function fetchNearbyPharmacies(lat, lon) {
-  updateStatus("scanning", "Scanning backend cache and Osm/Maps...");
+  updateStatus("scanning", "Scanning nearby pharmacies...");
   listPlaceholder.textContent = "Scanning area... Please wait.";
   pharmaciesList.style.display = "none";
   listPlaceholder.style.display = "block";
   
   try {
-    const response = await fetch(`${API_BASE}/api/pharmacies?lat=${lat}&lon=${lon}&radius=5.0`);
-    if (!response.ok) throw new Error("API server responded with error");
-    
-    const data = await response.json();
-    allStores = data.results || [];
-    
-    console.log(`Loaded ${allStores.length} stores.`);
+    const osmStores = await fetchDirectFromOverpass(lat, lon);
+    allStores = osmStores;
+    console.log(`Loaded ${allStores.length} stores directly from Overpass API.`);
     renderStores(allStores);
-    
-    if (data.cached) {
-      updateStatus("active", "Data fetched from cache.");
-    } else {
-      updateStatus("active", "Scan complete. Google Maps loading in background...");
-      // Poll database after 15 seconds to fetch any background-scraped Google Maps results
-      setTimeout(() => {
-        pollBackgroundScrapes(lat, lon);
-      }, 15000);
-    }
+    updateStatus("active", "Loaded directly from OpenStreetMap.");
   } catch (error) {
-    console.error("Fetch error:", error);
-    updateStatus("denied", "API server offline. Displaying local data.");
-    listPlaceholder.textContent = "Failed to connect to API server. Ensure backend is running.";
+    console.error("Direct Overpass fetch failed:", error);
+    updateStatus("denied", "OSM query failed. Check your internet connection.");
+    listPlaceholder.textContent = "Unable to fetch pharmacies. Check your internet connection.";
   }
 }
 
-// Poll backend to pull Google Maps stores loaded asynchronously
-async function pollBackgroundScrapes(lat, lon) {
-  try {
-    const response = await fetch(`${API_BASE}/api/pharmacies?lat=${lat}&lon=${lon}&radius=5.0`);
-    if (response.ok) {
-      const data = await response.json();
-      if (data.results && data.results.length > allStores.length) {
-        console.log(`Poll added ${data.results.length - allStores.length} new pharmacies.`);
-        allStores = data.results;
-        filterStores(); // Keep current search filter but update source
-      }
+// Fetch directly from OSM Overpass (No-Database / Backend-less Mode fallback)
+async function fetchDirectFromOverpass(lat, lon) {
+  const radiusMeters = 5000; // 5km
+  const query = `
+    [out:json][timeout:25];
+    (
+      node["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+      way["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+      relation["amenity"="pharmacy"](around:${radiusMeters},${lat},${lon});
+    );
+    out center;
+  `;
+  
+  const response = await fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: "data=" + encodeURIComponent(query),
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
     }
-  } catch (err) {
-    console.warn("Polling background worker failed:", err);
-  }
+  });
+  
+  if (!response.ok) throw new Error("Overpass API server responded with error " + response.status);
+  
+  const data = await response.json();
+  const elements = data.elements || [];
+  
+  return elements.map(elem => {
+    const elemLat = elem.lat || (elem.center && elem.center.lat);
+    const elemLon = elem.lon || (elem.center && elem.center.lon);
+    
+    const tags = elem.tags || {};
+    const name = tags.name || tags.brand || "Unnamed Pharmacy";
+    
+    // Address building
+    const addrParts = [];
+    if (tags["addr:housenumber"]) addrParts.push(tags["addr:housenumber"]);
+    if (tags["addr:street"]) addrParts.push(tags["addr:street"]);
+    if (tags["addr:place"]) addrParts.push(tags["addr:place"]);
+    if (tags["addr:city"]) addrParts.push(tags["addr:city"]);
+    if (tags["addr:postcode"]) addrParts.push(tags["addr:postcode"]);
+    
+    const address = addrParts.length ? addrParts.join(", ") : tags["addr:full"] || "Kerala, India";
+    const phone = tags.phone || tags["contact:phone"] || tags["contact:whatsapp"] || "";
+    
+    const distance = calculateHaversineDistance(lat, lon, elemLat, elemLon);
+    
+    return {
+      id: "osm_" + elem.id,
+      name: name,
+      latitude: parseFloat(elemLat),
+      longitude: parseFloat(elemLon),
+      address: address,
+      phone: phone,
+      source: "Ecosystem Sync",
+      distance: parseFloat(distance.toFixed(2))
+    };
+  }).sort((a, b) => a.distance - b.distance);
 }
+
+// Calculate Haversine distance in client browser
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+
 
 // Render pharmacies on map and list
 function renderStores(storesList) {
