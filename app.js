@@ -146,7 +146,7 @@ function initApp() {
   // Set up event listeners
   const statusIndicator = document.querySelector('.status-indicator');
   if (statusIndicator) {
-    statusIndicator.addEventListener('click', requestUserLocation);
+    statusIndicator.addEventListener('click', () => requestUserLocation(true));
   }
   searchInput.addEventListener('input', filterStores);
   placeInput.addEventListener('keypress', (e) => {
@@ -160,7 +160,7 @@ function initApp() {
   placeInput.addEventListener('blur', () => {
     searchLocation(placeInput.value.trim());
   });
-  btnScan.addEventListener('click', requestUserLocation);
+  btnScan.addEventListener('click', () => requestUserLocation(true));
   
   // Theme Toggle Click
   const btnTheme = document.getElementById('btn-theme');
@@ -384,14 +384,16 @@ function initMap(lat, lon) {
 }
 
 // Request Geolocation from Browser
-function requestUserLocation() {
+function requestUserLocation(isUserInitiated = false) {
   statusText.textContent = i18n[currentLang]["status-detecting"];
   
   if (!navigator.geolocation) {
     updateStatus("denied", "Geolocation not supported");
-    alert(currentLang === 'ml' ? 
-      "ഈ ഫയൽ സെർവറിലല്ല ഓപ്പൺ ചെയ്തിരിക്കുന്നത്. ദയവായി ഇത് Vercel ലേക്ക് അപ്‌ലോഡ് ചെയ്യുക അല്ലെങ്കിൽ ഒരു ലോക്കൽ സെർവറിൽ റൺ ചെയ്യുക." :
-      "Your browser is blocking geolocation because this file is opened locally (via file://). Please open it via a web server (like Vercel, Netlify, or VS Code Live Server) to allow GPS location access!");
+    if (isUserInitiated) {
+      alert(currentLang === 'ml' ? 
+        "ഈ ഫയൽ സെർവറിലല്ല ഓപ്പൺ ചെയ്തിരിക്കുന്നത്. ദയവായി ഇത് Vercel ലേക്ക് അപ്‌ലോഡ് ചെയ്യുക അല്ലെങ്കിൽ ഒരു ലോക്കൽ സെർവറിൽ റൺ ചെയ്യുക." :
+        "Your browser is blocking geolocation because this file is opened locally (via file://). Please open it via a web server (like Vercel, Netlify, or VS Code Live Server) to allow GPS location access!");
+    }
     fallbackToDefaultLocation();
     return;
   }
@@ -404,9 +406,11 @@ function requestUserLocation() {
       console.warn("High-accuracy geolocation failed...", error.message);
       if (error.code === 1) { // PERMISSION_DENIED
         updateStatus("denied", currentLang === 'ml' ? "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു" : "Location permission denied.");
-        alert(currentLang === 'ml' ? 
-          "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു. ദയവായി നിങ്ങളുടെ ബ്രൗസറിന്റെ അഡ്രസ്സ് ബാറിലെ ലോക്ക് (Lock) ഐക്കണിൽ ക്ലിക്ക് ചെയ്ത് ലൊക്കേഷൻ അനുവദിക്കുക (Allow), ശേഷം വീണ്ടും ശ്രമിക്കുക." : 
-          "Location permission denied. Please click the lock icon in your browser's address bar to change Location to 'Allow', then tap the status bar to retry!");
+        if (isUserInitiated) {
+          alert(currentLang === 'ml' ? 
+            "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു. ദയവായി നിങ്ങളുടെ ബ്രൗസറിന്റെ അഡ്രസ്സ് ബാറിലെ ലോക്ക് (Lock) ഐക്കണിൽ ക്ലിക്ക് ചെയ്ത് ലൊക്കേഷൻ അനുവദിക്കുക (Allow), ശേഷം വീണ്ടും ശ്രമിക്കുക." : 
+            "Location permission denied. Please click the lock icon in your browser's address bar to change Location to 'Allow', then tap the status bar to retry!");
+        }
         fallbackToDefaultLocation();
         return;
       }
@@ -442,11 +446,44 @@ function usePosition(position, label) {
   fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
 }
 
-function fallbackToDefaultLocation() {
+async function fallbackToDefaultLocation() {
+  updateStatus("scanning", currentLang === 'ml' ? "നെറ്റ്‌വർക്ക് ലൊക്കേഷൻ കണ്ടെത്തുന്നു..." : "Estimating location from IP...");
+  
+  try {
+    const response = await fetch("https://ipinfo.io/json");
+    if (response.ok) {
+      const data = await response.json();
+      if (data.loc) {
+        const parts = data.loc.split(',');
+        const lat = parseFloat(parts[0]);
+        const lon = parseFloat(parts[1]);
+        
+        // Ensure coordinates are roughly in Kerala region (lat: 8-13, lon: 74-78)
+        if (lat >= 8 && lat <= 13 && lon >= 74 && lon <= 78) {
+          userCoords.lat = lat;
+          userCoords.lon = lon;
+          
+          const cityName = data.city || (currentLang === 'ml' ? "നെറ്റ്‌വർക്ക് ലൊക്കേഷൻ" : "Network Location");
+          updateStatus("active", cityName);
+          coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
+          updateUserMarker(userCoords.lat, userCoords.lon);
+          map.setView([userCoords.lat, userCoords.lon], 14);
+          fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
+          return;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("IP Geolocation fallback failed, defaulting to Kochi:", error.message);
+  }
+
+  // Hard fallback to Kochi
+  userCoords.lat = 9.9312;
+  userCoords.lon = 76.2673;
+  updateStatus("denied", currentLang === 'ml' ? "കൊച്ചി (Default)" : "Kochi (Default)");
   coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Default)`;
   updateUserMarker(userCoords.lat, userCoords.lon);
   map.setView([userCoords.lat, userCoords.lon], 13);
-  btnScan.removeAttribute('disabled');
   fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
 }
 
