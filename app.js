@@ -583,6 +583,12 @@ async function fetchDirectFromOverpass(lat, lon) {
     const phone = tags.phone || tags["contact:phone"] || tags["contact:whatsapp"] || "";
     const opening_hours = tags.opening_hours || "";
     
+    // Location fields for targeted Google search
+    const district = tags["addr:district"] || tags["is_in:district"] || "";
+    const city = tags["addr:city"] || tags["addr:town"] || tags["addr:village"] || "";
+    const place = tags["addr:place"] || tags["addr:suburb"] || "";
+    const state = tags["addr:state"] || "Kerala";
+    
     const distance = calculateHaversineDistance(lat, lon, elemLat, elemLon);
     
     return {
@@ -594,7 +600,11 @@ async function fetchDirectFromOverpass(lat, lon) {
       phone: phone,
       opening_hours: opening_hours,
       source: "Verified OSM",
-      distance: parseFloat(distance.toFixed(2))
+      distance: parseFloat(distance.toFixed(2)),
+      district: district,
+      city: city,
+      place: place,
+      state: state
     };
   }).sort((a, b) => a.distance - b.distance);
 }
@@ -611,6 +621,21 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
+
+// Build a precise Google Business Profile search URL
+// Query format: "Store Name" pharmacy Place District Kerala
+function buildGoogleBizUrl(store) {
+  const lat = store.latitude;
+  const lon = store.longitude;
+  const name = store.name;
+
+  // Strategy: use Google Maps /search with the exact OSM coordinates as the anchor.
+  // The /@lat,lon,17z part zooms to street level at that pin — Google picks the
+  // business card for the branch AT that location, not all branches named similarly.
+  // This is the most reliable way to land on the exact shop's Business Profile.
+  return `https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lon},17z`;
+}
+
 
 // Render pharmacies list and markers
 function renderStores(storesList) {
@@ -664,7 +689,6 @@ function createListItemHTML(store, medicineName) {
   li.className = 'pharmacy-card';
   
   const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
-  const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
   const sourceClass = "source-verified";
   
   let actionHTML = "";
@@ -678,14 +702,9 @@ function createListItemHTML(store, medicineName) {
       </a>
     `;
   } else {
-    const copyText = buildStockMessage(store.name, medicineName);
-    actionHTML = `
-      <button onclick="copyToClipboard('${escapeJS(copyText)}', this)" class="card-wa-btn copy-btn">
-        <span>${i18n[currentLang]["detail-copy"]}</span>
-      </button>
-    `;
+    actionHTML = '';
   }
-  
+
   const statusLabel = store.phone ? i18n[currentLang]["available"] : i18n[currentLang]["missing"];
   
   li.innerHTML = `
@@ -699,15 +718,26 @@ function createListItemHTML(store, medicineName) {
     </div>
     <div class="card-actions">
       ${actionHTML}
-      <a href="${googleSearchUrl}" target="_blank" class="card-gmaps-btn" title="View Google Info">
+      <button class="card-explore-btn" data-store-id="${store.id}" title="Explore this pharmacy">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="10" r="3"></circle>
-          <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          <line x1="11" y1="8" x2="11" y2="14"/>
+          <line x1="8" y1="11" x2="14" y2="11"/>
         </svg>
-        <span>Google Info</span>
-      </a>
+        <span>Explore</span>
+      </button>
     </div>
   `;
+
+  // Attach explore button handler after innerHTML is set
+  const exploreBtn = li.querySelector('.card-explore-btn');
+  if (exploreBtn) {
+    exploreBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showStoreDetails(store);
+    });
+  }
   
   return li;
 }
@@ -781,67 +811,54 @@ window.focusStore = function(lat, lon, id) {
   }
 };
 
-// Slide-in Detail Panel Logic
+// ─── Google Data Enrichment ───
+
+// ─── Slide-in Detail Panel ─────────────────────────────────────────────────
+
 function showStoreDetails(store) {
   const detailPanel = document.getElementById('detail-panel');
   if (!detailPanel) return;
+
+  // ── 1. Populate immediately with OSM data ──
+  // Provide a quick-search button if data is missing, instead of just saying "--"
+  const missingPhoneBtn = `<button class="quick-search-btn" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(store.name + ' Kerala phone number')}', '_blank', 'noopener,noreferrer')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Search Web</button>`;
   
+  const missingHoursBtn = `<button class="quick-search-btn" onclick="window.open('https://www.google.com/search?q=${encodeURIComponent(store.name + ' Kerala opening hours')}', '_blank', 'noopener,noreferrer')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Check Hours</button>`;
+
+  document.getElementById('detail-phone').innerHTML = store.phone ? store.phone : missingPhoneBtn;
+  document.getElementById('detail-hours').innerHTML = store.opening_hours ? store.opening_hours : missingHoursBtn;
+
   document.getElementById('detail-store-name').textContent = store.name;
-  
   const categoryElem = document.getElementById('detail-category');
-  if (categoryElem) {
-    categoryElem.textContent = i18n[currentLang]['detail-category-ph'];
-  }
-  
-  document.getElementById('detail-address').textContent = store.address || i18n[currentLang]['detail-address-missing'];
-  
-  const phoneText = store.phone || i18n[currentLang]['detail-phone-missing'];
-  const phoneElem = document.getElementById('detail-phone');
-  phoneElem.textContent = phoneText;
-  
-  const hoursElem = document.getElementById('detail-hours');
-  hoursElem.textContent = store.opening_hours || i18n[currentLang]['detail-hours-missing'];
-  
-  const btnWhatsapp = document.getElementById('detail-btn-whatsapp');
-  const btnCall = document.getElementById('detail-btn-call');
+  if (categoryElem) categoryElem.textContent = i18n[currentLang]['detail-category-ph'];
+
+  document.getElementById('detail-address').textContent =
+    store.address || i18n[currentLang]['detail-address-missing'];
+
+  // ── 2. Wire up action buttons ──
+  const btnWhatsapp   = document.getElementById('detail-btn-whatsapp');
+  const btnCall       = document.getElementById('detail-btn-call');
   const btnDirections = document.getElementById('detail-btn-directions');
-  const btnCopy = document.getElementById('detail-btn-copy');
-  
-  const medicineName = searchInput.value.trim();
-  
-  if (store.phone) {
-    btnWhatsapp.removeAttribute('disabled');
-    btnWhatsapp.classList.remove('disabled');
-    btnWhatsapp.onclick = () => {
-      const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
-      window.open(whatsappUrl, '_blank');
-    };
-    
-    btnCall.removeAttribute('disabled');
-    btnCall.classList.remove('disabled');
-    btnCall.onclick = () => {
-      window.location.href = `tel:${store.phone}`;
-    };
-  } else {
-    btnWhatsapp.setAttribute('disabled', 'true');
-    btnWhatsapp.classList.add('disabled');
-    btnWhatsapp.onclick = null;
-    
-    btnCall.setAttribute('disabled', 'true');
-    btnCall.classList.add('disabled');
-    btnCall.onclick = null;
-  }
-  
-  btnDirections.onclick = () => {
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
-    window.open(googleSearchUrl, '_blank');
+  const medicineName  = searchInput.value.trim();
+
+  const wirePhoneButtons = (phone) => {
+    if (phone) {
+      btnWhatsapp.removeAttribute('disabled'); btnWhatsapp.classList.remove('disabled');
+      btnWhatsapp.onclick = () => window.open(buildWhatsAppLink(phone, store.name, medicineName), '_blank');
+      btnCall.removeAttribute('disabled'); btnCall.classList.remove('disabled');
+      btnCall.onclick = () => { window.location.href = `tel:${phone}`; };
+    } else {
+      btnWhatsapp.setAttribute('disabled', 'true'); btnWhatsapp.classList.add('disabled'); btnWhatsapp.onclick = null;
+      btnCall.setAttribute('disabled', 'true'); btnCall.classList.add('disabled'); btnCall.onclick = null;
+    }
   };
-  
-  btnCopy.onclick = () => {
-    const copyText = buildStockMessage(store.name, medicineName);
-    copyToClipboard(copyText, btnCopy);
-  };
-  
+
+  wirePhoneButtons(store.phone);
+  btnDirections.onclick = () => window.open(buildGoogleBizUrl(store), '_blank');
+
+  const btnGoogleBiz = document.getElementById('detail-btn-google-biz');
+  if (btnGoogleBiz) btnGoogleBiz.onclick = () => window.open(buildGoogleBizUrl(store), '_blank');
+
   detailPanel.classList.remove('hidden');
 }
 

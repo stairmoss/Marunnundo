@@ -139,11 +139,14 @@
       </div>
     </div>
     <div class="detail-content">
+
+      <!-- Store name + category + rating + enrich status -->
       <div class="detail-main-info">
         <h2 id="detail-store-name">--</h2>
         <p id="detail-category" class="detail-subtext" data-i18n="detail-category-ph">Pharmacy / Medical Store</p>
       </div>
-      
+
+      <!-- Action circle buttons -->
       <div class="detail-actions-row">
         <button id="detail-btn-whatsapp" class="detail-action-circle">
           <div class="circle-icon wa">
@@ -161,15 +164,7 @@
           </div>
           <span class="action-label" data-i18n="detail-directions">Directions</span>
         </button>
-        <button id="detail-btn-copy" class="detail-action-circle">
-          <div class="circle-icon share">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-            </svg>
-          </div>
-          <span class="action-label" data-i18n="detail-copy">Copy Query</span>
-        </button>
+
         <button id="detail-btn-call" class="detail-action-circle">
           <div class="circle-icon call">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -179,7 +174,8 @@
           <span class="action-label" data-i18n="detail-call">Call</span>
         </button>
       </div>
-      
+
+      <!-- Info rows: address, phone, hours -->
       <div class="detail-info-section">
         <div class="info-item">
           <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -196,7 +192,7 @@
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
           <div class="info-text">
-            <span class="info-label" data-i18n="detail-phone-label">Phone (Important)</span>
+            <span class="info-label">Phone</span>
             <span id="detail-phone" class="phone-link">--</span>
           </div>
         </div>
@@ -211,7 +207,21 @@
           </div>
         </div>
       </div>
-      
+
+      <!-- Google Business Profile Button -->
+      <button id="detail-btn-google-biz" class="detail-google-biz-btn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <span>Google Business Profile</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;opacity:0.6">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </button>
+
     </div>
   </div>
 

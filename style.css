@@ -36,33 +36,33 @@
 }
 
 [data-theme="dark"] {
-  --primary: #2ea043;          /* GitHub Green */
-  --primary-hover: #3fb950;
-  --primary-light: rgba(46, 160, 67, 0.15);
+  --primary: #2563eb;          /* Explore Blue */
+  --primary-hover: #1d4ed8;
+  --primary-light: rgba(37, 99, 235, 0.15);
   --white: #161b22;            /* GitHub Dark Box Background */
   --bg-light: #0d1117;         /* GitHub Dark Canvas Background */
   --border-light: #30363d;     /* GitHub Dark Border */
   --text-dark: #c9d1d9;        /* GitHub Dark Primary Text */
   --text-muted: #8b949e;       /* GitHub Dark Secondary Text */
   --shadow-premium: 0 8px 24px rgba(1, 4, 9, 0.8);
-  --shadow-hover: 0 20px 25px -5px rgba(46, 160, 67, 0.15), 0 10px 10px -6px rgba(46, 160, 67, 0.15);
+  --shadow-hover: 0 20px 25px -5px rgba(37, 99, 235, 0.15), 0 10px 10px -6px rgba(37, 99, 235, 0.15);
   
   --panel-bg: rgba(22, 27, 34, 0.95);
   --panel-border: rgba(48, 54, 61, 0.8);
   --modal-overlay-bg: rgba(1, 4, 9, 0.8);
   --map-filter: invert(90%) hue-rotate(180deg) brightness(90%) contrast(90%);
 
-  /* Accent Glow / Shadows variables (Green) */
-  --primary-glow: rgba(46, 160, 67, 0.1);
-  --primary-glow-heavy: rgba(46, 160, 67, 0.25);
-  --primary-shadow-light: rgba(46, 160, 67, 0.05);
-  --primary-shadow-medium: rgba(46, 160, 67, 0.15);
-  --primary-shadow-heavy: rgba(46, 160, 67, 0.3);
-  --primary-border-soft: rgba(46, 160, 67, 0.2);
-  --primary-border-soft-dashed: rgba(46, 160, 67, 0.4);
-  --pulse-rgba-start: rgba(46, 160, 67, 0.7);
-  --pulse-rgba-mid: rgba(46, 160, 67, 0);
-  --pulse-rgba-end: rgba(46, 160, 67, 0);
+  /* Accent Glow / Shadows variables (Blue) */
+  --primary-glow: rgba(37, 99, 235, 0.1);
+  --primary-glow-heavy: rgba(37, 99, 235, 0.25);
+  --primary-shadow-light: rgba(37, 99, 235, 0.05);
+  --primary-shadow-medium: rgba(37, 99, 235, 0.15);
+  --primary-shadow-heavy: rgba(37, 99, 235, 0.3);
+  --primary-border-soft: rgba(37, 99, 235, 0.2);
+  --primary-border-soft-dashed: rgba(37, 99, 235, 0.4);
+  --pulse-rgba-start: rgba(37, 99, 235, 0.7);
+  --pulse-rgba-mid: rgba(37, 99, 235, 0);
+  --pulse-rgba-end: rgba(37, 99, 235, 0);
 }
 
 * {
@@ -129,7 +129,7 @@ html, body {
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 8px;
 }
 
@@ -141,11 +141,19 @@ html, body {
 }
 
 .app-logo {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px var(--primary-border-soft));
+  box-shadow: 0 2px 10px var(--primary-shadow-medium), 0 0 0 2px var(--primary-border-soft);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: var(--white);
+  padding: 2px;
+}
+
+.app-logo:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px var(--primary-shadow-heavy), 0 0 0 2px var(--primary);
 }
 
 .title-wrap h1 {
@@ -1299,3 +1307,162 @@ html, body {
   to { transform: rotate(360deg); }
 }
 
+/* Explore button on pharmacy cards — premium blue pill */
+.card-explore-btn {
+  flex: 1;
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: none;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4), 0 1px 3px rgba(37, 99, 235, 0.3);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card-explore-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.card-explore-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.card-explore-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.5), 0 2px 6px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px);
+}
+
+.card-explore-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* Google Business Profile button in detail sidebar */
+.detail-google-biz-btn {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+  margin-top: 4px;
+}
+
+.detail-google-biz-btn:hover {
+  background: linear-gradient(135deg, #1565c0 0%, #0a2f7d 100%);
+  box-shadow: 0 6px 18px rgba(26, 115, 232, 0.45);
+  transform: translateY(-2px);
+}
+
+.detail-google-biz-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+}
+
+.detail-google-biz-btn span {
+  flex: 1;
+  text-align: left;
+}
+
+
+/* ── Google Enrichment Badge ─────────────────────────────────── */
+.google-enrich-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border-soft);
+  width: fit-content;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.google-enrich-badge.success {
+  background: #f0fdf4;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.google-enrich-badge.failed {
+  background: #fff7ed;
+  border-color: rgba(251, 146, 60, 0.3);
+}
+#enrich-status-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+}
+.google-enrich-badge.success #enrich-status-text { color: #16a34a; }
+.google-enrich-badge.failed  #enrich-status-text { color: #ea580c; }
+
+.enrich-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  animation: enrich-pulse 1.4s infinite ease-in-out;
+  flex-shrink: 0;
+}
+/* ── Website link in detail panel ──────────────────────────── */
+.detail-website-link {
+  font-size: 0.85rem;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.detail-website-link:hover { text-decoration: underline; }
+
+/* Quick Search Button Fallback */
+.quick-search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border-soft);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.quick-search-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 2px 8px var(--primary-shadow-medium);
+  transform: translateY(-1px);
+}
+.quick-search-btn svg {
+  width: 12px;
+  height: 12px;
+}
