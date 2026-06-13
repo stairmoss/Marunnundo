@@ -2,9 +2,13 @@
   <img src="logo.png" alt="MarunnUndo Logo" width="150">
 </div>
 
+
+
+
+
 # MarunnUndo (മരുന്നുണ്ടോ?)
 
-Hi everyone. Welcome to the MarunnUndo project repository.
+* check it out at : https://marunnundo.vercel.app
 
 Basically, getting medicines quickly when there is an emergency can be a big headache, especially if you are in a new place. You have to run around asking multiple shops if a specific medicine is in stock. To solve this problem, we created MarunnUndo. 
 

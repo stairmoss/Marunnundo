@@ -540,17 +540,41 @@ async function fetchDirectFromOverpass(lat, lon) {
     out center;
   `;
   
-  const response = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: "data=" + encodeURIComponent(query),
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded"
+  const endpoints = [
+    "https://overpass-api.de/api/interpreter",
+    "https://lz4.overpass-api.de/api/interpreter",
+    "https://z.overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+  ];
+  
+  let data = null;
+  let lastError = null;
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: "data=" + encodeURIComponent(query),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status} from ${endpoint}`);
+      
+      data = await response.json();
+      break; // Success! Exit loop.
+    } catch (err) {
+      console.warn(`Overpass fetch failed on ${endpoint}:`, err);
+      lastError = err;
     }
-  });
+  }
+
+  if (!data) {
+    throw new Error("All Overpass API endpoints failed. Last error: " + (lastError ? lastError.message : "Unknown"));
+  }
   
-  if (!response.ok) throw new Error("Overpass API server error " + response.status);
-  
-  const data = await response.json();
   const elements = data.elements || [];
   
   // Filter coordinates and valid names
