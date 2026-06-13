@@ -13,6 +13,10 @@
   <meta property="og:description" content="Find nearby pharmacies in Kerala instantly without compromising your privacy.">
   <meta property="og:type" content="website">
   
+  <!-- Leaflet & Turf.js for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* Smooth Scrolling */
@@ -24,50 +28,48 @@
       --bg-color: #ffffff;
       --text-color: #0f172a;
       --text-muted: #64748b;
-      --primary-blue: #2563eb;
-      --primary-blue-hover: #1d4ed8;
-      --light-blue: #eff6ff;
-      --border-color: #e2e8f0;
+      --primary-blue: #0091FF;
+      --primary-blue-hover: #007ACC;
+      --dark-blue: #032b59;
+      --light-blue: #ffffff;
+      --border-color: transparent;
     }
     
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
     }
     
     body {
-      font-family: 'Inter', sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       line-height: 1.6;
       overflow-x: hidden;
     }
     
-    /* Navigation */
-    nav {
+    /* Navbar */
+    .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 5%;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      position: fixed;
+      padding: 1.5rem 5%;
+      background: transparent;
+      position: absolute;
+      width: 100%;
       top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      border-bottom: 1px solid var(--border-color);
+      z-index: 1000;
     }
     
-    .logo {
+    .nav-logo {
       font-size: 1.5rem;
       font-weight: 700;
-      color: var(--text-color);
+      color: white;
       text-decoration: none;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 10px;
     }
 
     .nav-logo-img {
@@ -84,25 +86,30 @@
     
     .nav-links a {
       text-decoration: none;
-      color: var(--text-color);
+      color: white;
       font-weight: 500;
-      transition: color 0.3s ease;
+      transition: color 0.3s;
+      font-size: 1rem;
     }
     
     .nav-links a:hover {
-      color: var(--primary-blue);
+      color: rgba(255,255,255,0.8);
     }
     
     .nav-btn {
-      background: var(--primary-blue);
+      background: #FF8A00; /* High contrast opposite to blue */
       color: white !important;
-      padding: 0.6rem 1.5rem;
+      padding: 0.6rem 2rem;
       border-radius: 999px;
-      transition: background 0.3s ease;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 138, 0, 0.3);
     }
     
     .nav-btn:hover {
-      background: var(--primary-blue-hover);
+      background: #E67A00;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 138, 0, 0.4);
     }
 
     /* Sections */
@@ -128,32 +135,116 @@
 
     /* Hero Section */
     .hero {
-      min-height: 100vh;
+      min-height: 85vh;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      text-align: center;
-      /* Minimalist Background Image with Overlay */
-      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(239, 246, 255, 0.95)), 
-                  url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+      background: linear-gradient(120deg, #005bb5 0%, #0091FF 40%, #00d2ff 100%);
       padding-top: 8rem;
+      padding-bottom: 4rem;
+    }
+
+    .hero-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 1300px;
+      gap: 4rem;
+      padding: 0 5%;
+    }
+
+    .hero-text {
+      flex: 1.5;
+      text-align: left;
+      padding-right: 1rem;
     }
     
+    .hero h2 {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+    }
+
     .hero h1 {
-      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
       font-weight: 700;
       margin-bottom: 1.5rem;
-      color: var(--text-color);
-      line-height: 1.2;
-      max-width: 800px;
+      color: white;
+      line-height: 1.15;
     }
     
     .hero p {
-      font-size: 1.25rem;
-      color: var(--text-muted);
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.9);
       margin-bottom: 2.5rem;
-      max-width: 600px;
+      max-width: 800px;
+    }
+
+    .hero-visual {
+      flex: 1.5;
+      display: flex;
+      justify-content: center;
+      position: relative;
+    }
+
+    .hero-map-wrapper {
+      position: relative;
+      width: 100%;
+      height: 80vh;
+      min-height: 500px;
+      overflow: hidden;
+      background: transparent;
+      pointer-events: none; /* Make purely visual */
+    }
+
+    #hero-map {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    /* Removed old map-sidebar class since we use inline styles for the fake sidebars */
+
+    .btn-3d {
+      appearance: none;
+      background: #ffffff;
+      color: var(--primary-blue);
+      font-weight: 700;
+      font-size: 1.25rem;
+      padding: 1rem 2.5rem;
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 8px 0 #e2e8f0, 0 15px 30px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.1s ease;
+      z-index: 1000;
+    }
+
+    .btn-3d:active {
+      box-shadow: 0 0 0 #e2e8f0, 0 5px 10px rgba(0, 0, 0, 0.1);
+      transform: translate(-50%, calc(-50% + 8px));
+    }
+
+    .marker-drop {
+      width: 12px;
+      height: 12px;
+      background-color: var(--primary-blue);
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 0 15px rgba(0, 145, 255, 0.8);
+      animation: dropIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    }
+
+    @keyframes dropIn {
+      0% { transform: translateY(-300px) scale(0); opacity: 0; }
+      60% { transform: translateY(15px) scale(1.3); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
     }
     
     .explore-btn {
@@ -161,31 +252,75 @@
       align-items: center;
       gap: 0.5rem;
       padding: 1rem 2.5rem;
-      background-color: var(--primary-blue);
-      color: white;
+      background-color: #ffffff;
+      color: var(--primary-blue);
       text-decoration: none;
-      font-weight: 500;
-      font-size: 1.125rem;
+      font-weight: 700;
+      font-size: 1rem;
       border-radius: 999px;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     
     .explore-btn:hover {
-      background-color: var(--primary-blue-hover);
-      box-shadow: 0 6px 24px rgba(37, 99, 235, 0.4);
+      background-color: #f8fafc;
       transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: white;
+      padding: 3rem 5%;
+      border-bottom: 1px solid #f1f5f9;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    
+    .stat-item {
+      text-align: center;
+      min-width: 150px;
+    }
+    
+    .stat-number {
+      color: var(--primary-blue);
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+    
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-top: 0.2rem;
+      font-weight: 600;
     }
 
     /* About Section */
     .about {
-      background: #ffffff;
+      padding: 6rem 5%;
       text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .about::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: -50%;
+      width: 100vw;
+      height: 150%;
+      background: #f0f9ff;
+      border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+      z-index: -1;
+      opacity: 0.7;
     }
 
     .about-content {
-      max-width: 800px;
-      margin: 0 auto;
       font-size: 1.125rem;
       color: var(--text-muted);
       line-height: 1.8;
@@ -213,10 +348,10 @@
       background: #ffffff;
       padding: 2.5rem;
       border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.05);
+      box-shadow: 0 10px 40px rgba(0, 145, 255, 0.08);
       text-align: center;
       width: 300px;
-      border: 1px solid var(--border-color);
+      border: none;
       transition: transform 0.3s ease;
     }
 
@@ -255,18 +390,18 @@
       gap: 0.5rem;
       padding: 0.8rem 2rem;
       background-color: #ffffff;
-      color: var(--text-color);
+      color: var(--primary-blue);
       text-decoration: none;
       font-weight: 600;
-      border: 2px solid var(--border-color);
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 145, 255, 0.15);
       border-radius: 999px;
       transition: all 0.3s ease;
     }
 
     .contribute-btn:hover {
-      border-color: var(--text-color);
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+      box-shadow: 0 6px 20px rgba(0, 145, 255, 0.25);
     }
 
     /* Footer */
@@ -275,51 +410,53 @@
       padding: 2rem;
       background: transparent;
       color: var(--text-muted);
-      border-top: 1px solid var(--border-color);
       font-size: 0.9rem;
     }
 
     /* Mobile Responsive */
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      cursor: pointer;
-    }
-    .hamburger span {
-      width: 25px;
-      height: 3px;
-      background: var(--text-color);
-      transition: all 0.3s ease;
-    }
-
     @media (max-width: 768px) {
-      .hamburger {
-        display: flex;
-      }
       .nav-links {
         display: none;
         flex-direction: column;
         position: absolute;
         top: 100%;
         left: 0;
-        right: 0;
-        background: rgba(255, 255, 255, 0.98);
-        padding: 1rem;
-        border-bottom: 1px solid var(--border-color);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        width: 100%;
+        background: var(--primary-blue);
+        padding: 1rem 0;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
       }
       .nav-links.active {
         display: flex;
       }
-      .nav-btn {
+      .hamburger {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        cursor: pointer;
+      }
+      .hamburger span {
+        width: 25px;
+        height: 3px;
+        background-color: white;
+      }
+      .hero-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 3rem;
+      }
+      .hero-text {
         text-align: center;
       }
-      section {
-        padding: 4rem 5%;
+      .hero p {
+        margin: 0 auto 2.5rem;
       }
-      .hero h1 {
-        font-size: 2.2rem;
+      .hero-map-wrapper {
+        height: 50vh;
+        min-height: 300px;
+      }
+      .explore-btn {
+        margin: 0 auto;
       }
     }
   </style>
@@ -327,35 +464,100 @@
 <body>
 
   <!-- Navigation -->
-  <nav>
-    <a href="#" class="logo">
+  <nav class="navbar">
+    <a href="#" class="nav-logo">
       <img src="logo.png" alt="MarunnUndo Logo" class="nav-logo-img" onerror="this.style.display='none'">
       MarunnUndo
     </a>
+    <div class="nav-links" id="nav-links">
+      <a href="#home">Home</a>
+      <a href="#about">About</a>
+      <a href="#contributors">Contributors</a>
+      <a href="app.html" class="nav-btn">Find Pharmacies</a>
+    </div>
     <div class="hamburger" id="hamburger">
       <span></span>
       <span></span>
       <span></span>
     </div>
-    <div class="nav-links" id="nav-links">
-      <a href="#about">About</a>
-      <a href="#contributors">Contributors</a>
-      <a href="app.html" class="nav-btn">Explore App</a>
-    </div>
   </nav>
 
   <!-- Hero Section -->
   <section class="hero" id="home">
-    <h1>Find medicines near you, instantly.</h1>
-    <p>A fast, reliable, and privacy-focused pharmacy locator built to help you discover nearby medical stores without any hassle.</p>
-    <a href="app.html" class="explore-btn">
-      Explore the app
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="5" y1="12" x2="19" y2="12"></line>
-        <polyline points="12 5 19 12 12 19"></polyline>
-      </svg>
-    </a>
+    <div class="hero-container">
+      <div class="hero-text">
+        <h2>Welcome to MarunnUndo</h2>
+        <h1>Find medicines near you, instantly.</h1>
+        <p>A fast, reliable, and privacy-focused pharmacy locator built to help you discover nearby medical stores without any hassle.</p>
+        <a href="app.html" class="explore-btn">
+          Explore App
+        </a>
+      </div>
+      
+      <div class="hero-visual">
+        <div class="hero-map-wrapper">
+          <div id="hero-map"></div>
+          
+          <!-- Fake Left Sidebar for Video Demo (Search List) -->
+          <div id="fake-sidebar-left" style="position: absolute; top: 20px; left: -300px; width: 240px; height: calc(100% - 40px); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 1000; transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 30px rgba(0,145,255,0.1); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <div style="width: 18px; height: 2px; background: #0091FF;"></div>
+                <div style="width: 18px; height: 2px; background: #0091FF;"></div>
+                <div style="width: 18px; height: 2px; background: #0091FF;"></div>
+              </div>
+              <div style="font-size: 0.9rem; font-weight: 700; color: #0091FF;">MarunnUndo</div>
+            </div>
+            <div style="width: 100%; height: 35px; background: #f1f5f9; border-radius: 999px;"></div>
+            <div style="width: 100%; height: 60px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);"></div>
+            <div style="width: 100%; height: 60px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);"></div>
+            <div style="width: 100%; height: 60px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);"></div>
+          </div>
+
+          <!-- Fake Right Sidebar for Video Demo (Pharmacy Details) -->
+          <div id="fake-sidebar-right" style="position: absolute; top: 20px; right: -320px; width: 260px; height: auto; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); z-index: 1000; transition: right 0.5s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 30px rgba(0,145,255,0.15); padding: 20px; border-radius: 20px; display: flex; flex-direction: column; gap: 8px; font-family: 'Inter', sans-serif; text-align: left;">
+            <div style="width: 100%; height: 100px; background: #e2e8f0; border-radius: 12px; margin-bottom: 8px; overflow: hidden; position: relative;">
+              <!-- Simulated map preview or image placeholder -->
+              <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, #e2e8f0 25%, #cbd5e1 25%, #cbd5e1 50%, #e2e8f0 50%, #e2e8f0 75%, #cbd5e1 75%, #cbd5e1 100%); background-size: 20px 20px;"></div>
+            </div>
+            <h3 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">John's Pharmacy</h3>
+            <div style="color: #fbbf24; font-size: 0.9rem;"><span style="color: #64748b; font-size: 0.8rem;">(128 Reviews)</span></div>
+            <div style="color: #10b981; font-size: 0.85rem; font-weight: 600; margin-top: 4px;">Open Now</div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #475569; margin-top: 4px;">
+              +91 98765 43210
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: #475569;">
+              08:00 AM - 10:00 PM
+            </div>
+            <div style="margin-top: 10px; width: 100%; height: 35px; background: #0091FF; border-radius: 999px; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 600; cursor: pointer;">Get Directions</div>
+          </div>
+
+          <button id="scan-btn" class="btn-3d">Find Nearby</button>
+          
+          <!-- Fake Mouse Cursor for the "Video Demo" -->
+          <svg id="fake-cursor" viewBox="0 0 28 28" width="32" height="32" style="position: absolute; top: 0; left: 0; z-index: 9999; transform: translate(400px, 400px); transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1); pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));">
+            <path d="M3 3 L12 24 L15 15 L24 12 Z" fill="#ffffff" stroke="#000000" stroke-width="1.5" stroke-linejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
   </section>
+
+  <!-- Stats Bar matching image style -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-number">5,000+</div>
+      <div class="stat-label">Pharmacies</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">14</div>
+      <div class="stat-label">Districts</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number">24/7</div>
+      <div class="stat-label">Available</div>
+    </div>
+  </div>
 
   <!-- About Section -->
   <section class="about" id="about">
@@ -394,8 +596,11 @@
 
   <!-- Footer -->
   <footer>
-    <p>Made with ❤️ for Kerala.</p>
+    <p>Made for Kerala.</p>
   </footer>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <script>
     // Hamburger Menu Toggle
@@ -408,6 +613,143 @@
       link.addEventListener('click', () => {
         document.getElementById('nav-links').classList.remove('active');
       });
+    });
+
+    // Interactive "Video-Like" Animation Loop
+    document.addEventListener("DOMContentLoaded", function() {
+      // Initialize transparent map
+      const heroMap = L.map('hero-map', {
+        zoomControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        attributionControl: false
+      }).setView([15.0, 77.0], 5.5);
+
+      // No tile layer! This ensures the map is completely transparent and blends into the background.
+
+      let keralaPolygon = null;
+
+      // Fetch precise real-world Kerala boundary (including Palakkad gap)
+      fetch('kerala.geojson')
+        .then(response => response.json())
+        .then(data => {
+          keralaPolygon = data.features[0];
+          
+          // Draw precise Kerala boundary on the map
+          L.geoJSON(keralaPolygon, {
+            style: {
+              color: 'rgba(255, 255, 255, 0.6)',
+              weight: 2,
+              fillColor: 'rgba(255, 255, 255, 0.15)',
+              fillOpacity: 1
+            }
+          }).addTo(heroMap);
+        })
+        .catch(err => console.error("Error loading Kerala GeoJSON:", err));
+
+      const scanBtn = document.getElementById('scan-btn');
+      const cursor = document.getElementById('fake-cursor');
+      let markers = [];
+
+      // Generate a coordinate that strictly falls inside the precise Kerala shape
+      function getRandomKeralaLatLng() {
+        if (!keralaPolygon) return [10.5, 76.3]; // Fallback while loading
+        
+        let found = false;
+        let pt;
+        while (!found) {
+          const lat = 8.0 + Math.random() * 5.0; 
+          const lng = 74.5 + Math.random() * 3.5;
+          pt = turf.point([lng, lat]);
+          if (turf.booleanPointInPolygon(pt, keralaPolygon)) {
+            found = true;
+          }
+        }
+        return [pt.geometry.coordinates[1], pt.geometry.coordinates[0]];
+      }
+
+      const fakeSidebarLeft = document.getElementById('fake-sidebar-left');
+      const fakeSidebarRight = document.getElementById('fake-sidebar-right');
+
+      function runDemoLoop() {
+        markers.forEach(m => heroMap.removeLayer(m));
+        markers = [];
+        heroMap.setView([14.5, 76.5], 5.5, {animate: false});
+        scanBtn.style.opacity = '1';
+        scanBtn.style.transform = 'translate(-50%, -50%) scale(1)';
+        scanBtn.style.boxShadow = '0 8px 0 #e2e8f0, 0 15px 30px rgba(0, 0, 0, 0.1)';
+        fakeSidebarLeft.style.left = '-300px';
+        fakeSidebarRight.style.right = '-320px';
+        
+        const wrapperRect = document.querySelector('.hero-map-wrapper').getBoundingClientRect();
+        cursor.style.transition = 'none';
+        cursor.style.transform = `translate(${wrapperRect.width - 20}px, ${wrapperRect.height - 20}px)`;
+
+        setTimeout(() => {
+          cursor.style.transition = 'transform 1s cubic-bezier(0.25, 1, 0.5, 1)';
+          
+          const btnRect = scanBtn.getBoundingClientRect();
+          const x = (btnRect.left - wrapperRect.left) + btnRect.width / 2;
+          const y = (btnRect.top - wrapperRect.top) + btnRect.height / 2;
+          
+          cursor.style.transform = `translate(${x}px, ${y}px)`;
+          
+          setTimeout(() => {
+            cursor.style.transform = `translate(${x}px, ${y}px) scale(0.85)`;
+            scanBtn.style.transform = 'translate(-50%, calc(-50% + 8px)) scale(0.95)';
+            scanBtn.style.boxShadow = '0 0 0 #e2e8f0, 0 5px 10px rgba(0, 0, 0, 0.1)';
+            
+            setTimeout(() => {
+              cursor.style.transform = `translate(${x + 40}px, ${y + 60}px) scale(1)`;
+              scanBtn.style.opacity = '0';
+              
+              heroMap.flyTo([10.5, 76.3], 6.5, { duration: 1.5 });
+              setTimeout(() => {
+                fakeSidebarLeft.style.left = '20px';
+              }, 400);
+              
+              setTimeout(() => {
+                for (let i = 0; i < 500; i++) {
+                  setTimeout(() => {
+                    const coord = getRandomKeralaLatLng();
+                    const icon = L.divIcon({
+                      className: 'marker-drop',
+                      iconSize: [12, 12]
+                    });
+                    const m = L.marker(coord, { icon: icon }).addTo(heroMap);
+                    markers.push(m);
+                  }, i * 5); 
+                }
+                
+                setTimeout(() => {
+                  const markerX = wrapperRect.width / 2 + 30;
+                  const markerY = wrapperRect.height / 2 + 10;
+                  
+                  cursor.style.transform = `translate(${markerX}px, ${markerY}px)`;
+                  
+                  setTimeout(() => {
+                    cursor.style.transform = `translate(${markerX}px, ${markerY}px) scale(0.85)`;
+                    
+                    setTimeout(() => {
+                      cursor.style.transform = `translate(${markerX + 40}px, ${markerY + 60}px) scale(1)`;
+                      fakeSidebarRight.style.right = '20px';
+                      
+                      setTimeout(runDemoLoop, 4000);
+                    }, 300);
+                  }, 1000);
+                }, 2600);
+                
+              }, 1600);
+            }, 300);
+          }, 1000);
+        }, 800);
+      }
+
+      // Start the infinite video demo
+      runDemoLoop();
     });
   </script>
 </body>
