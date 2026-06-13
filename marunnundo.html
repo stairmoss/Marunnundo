@@ -91,12 +91,16 @@
 
       <!-- Action buttons -->
       <div class="actions-section">
-        <button id="btn-scan" class="action-btn" disabled>
+        <button id="btn-scan" class="action-btn">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.657 16.657L13.414 20.9C12.633 21.681 11.367 21.681 10.586 20.9L6.343 16.657C4.586 14.9 4.586 12.043 6.343 10.286C8.1 8.529 10.957 8.529 12.714 10.286L17.657 15.229C18.438 16.01 18.438 17.276 17.657 18.057C16.876 18.838 15.61 18.838 14.829 18.057L11.293 14.522C11.105 14.334 10.795 14.334 10.607 14.522C10.419 14.71 10.419 15.02 10.607 15.208L14.143 18.743C15.705 20.305 18.238 20.305 19.8 18.743C21.362 17.181 21.362 14.648 19.8 13.086L14.857 8.143C12.318 5.604 8.204 5.604 5.665 8.143C3.126 10.682 3.126 14.796 5.665 17.335L9.908 21.578M15 3H21M21 3V9M21 3L14 10" 
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+            <line x1="12" y1="1" x2="12" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="20" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="20" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span data-i18n="btn-scan">Scan This Area</span>
+          <span data-i18n="btn-scan">Use Current Location</span>
         </button>
       </div>
 

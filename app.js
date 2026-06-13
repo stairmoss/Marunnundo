@@ -54,13 +54,13 @@ const i18n = {
     "tagline": "Verify medicine stock at nearby pharmacies instantly.",
     "place-search-placeholder": "Search place/city (e.g., Aluva, Trivandrum)...",
     "medicine-search-placeholder": "Type medicine name (e.g., Insulin)...",
-    "status-detecting": "Detecting geolocation...",
+    "status-detecting": "Finding location (takes up to 15s)...",
     "status-loading-osm": "Loading directly from OpenStreetMap.",
     "status-osm-failed": "OSM query failed. Check connection.",
     "status-searching": "Searching...",
     "status-not-found": "Place not found. Try another name.",
     "status-search-failed": "Search failed. Check connection.",
-    "btn-scan": "Scan This Area",
+    "btn-scan": "Use Current Location",
     "results-title": "Nearby Pharmacies",
     "list-placeholder": "Please allow location access to discover shops.",
     "list-placeholder-scanning": "Scanning area... Please wait.",
@@ -89,13 +89,13 @@ const i18n = {
     "tagline": "സമീപത്തുള്ള ഫാർമസികളിൽ മരുന്ന് സ്റ്റോക്ക് ഉണ്ടോ എന്ന് പരിശോധിക്കുക.",
     "place-search-placeholder": "സ്ഥലം തെരയുക (ഉദാ: ആലുവ, തിരുവനന്തപുരം)...",
     "medicine-search-placeholder": "മരുന്നിന്റെ പേര് നൽകുക (ഉദാ: Insulin)...",
-    "status-detecting": "നിങ്ങളുടെ ലൊക്കേഷൻ കണ്ടെത്തുന്നു...",
+    "status-detecting": "ലൊക്കേഷൻ കണ്ടെത്തുന്നു (15 സെക്കന്റ് വരെ എടുത്തേക്കാം)...",
     "status-loading-osm": "OpenStreetMap-ൽ നിന്നും ലോഡ് ചെയ്യുന്നു.",
     "status-osm-failed": "ലൊക്കേഷൻ കണ്ടെത്താൻ സാധിച്ചില്ല. കണക്ഷൻ പരിശോധിക്കുക.",
     "status-searching": "തിരയുന്നു...",
     "status-not-found": "സ്ഥലം കണ്ടെത്താനായില്ല. മറ്റൊന്ന് ശ്രമിക്കുക.",
     "status-search-failed": "തിരച്ചിൽ പരാജയപ്പെട്ടു. കണക്ഷൻ പരിശോധിക്കുക.",
-    "btn-scan": "ഈ ഭാഗം പരിശോധിക്കുക",
+    "btn-scan": "എന്റെ ലൊക്കേഷൻ ഉപയോഗിക്കുക",
     "results-title": "സമീപത്തുള്ള ഫാർമസികൾ",
     "list-placeholder": "സ്ഥലങ്ങൾ കാണാൻ ലൊക്കേഷൻ അനുമതി നൽകുക.",
     "list-placeholder-scanning": "പരിശോധിക്കുന്നു... ദയവായി കാത്തിരിക്കുക.",
@@ -154,7 +154,7 @@ function initApp() {
       searchLocation(placeInput.value.trim());
     }
   });
-  btnScan.addEventListener('click', handleManualScan);
+  btnScan.addEventListener('click', requestUserLocation);
   
   // Theme Toggle Click
   const btnTheme = document.getElementById('btn-theme');
