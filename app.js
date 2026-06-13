@@ -154,6 +154,12 @@ function initApp() {
       searchLocation(placeInput.value.trim());
     }
   });
+  placeInput.addEventListener('change', () => {
+    searchLocation(placeInput.value.trim());
+  });
+  placeInput.addEventListener('blur', () => {
+    searchLocation(placeInput.value.trim());
+  });
   btnScan.addEventListener('click', requestUserLocation);
   
   // Theme Toggle Click
