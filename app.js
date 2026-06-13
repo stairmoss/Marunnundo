@@ -1,4 +1,5 @@
 // MarunnUndo Client Application
+// Zero-Backend, Serverless, OpenStreetMap-Only
 
 let map;
 let userMarker;
@@ -17,13 +18,13 @@ const resultsCount = document.getElementById('results-count');
 const listPlaceholder = document.getElementById('list-placeholder');
 const pharmaciesList = document.getElementById('pharmacies-list');
 
-// Custom SVG Icons in Medical Blue
+// Custom SVG Icons in Medical Blue / Theme colors
 const blueMarkerIcon = L.divIcon({
   html: `
     <div class="custom-pin">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9C9.5 7.62 10.62 6.5 12 6.5C13.38 6.5 14.5 7.62 14.5 9C14.5 10.38 13.38 11.5 12 11.5Z" 
-              fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>
+              fill="var(--primary)" stroke="#ffffff" stroke-width="1.5"/>
       </svg>
     </div>
   `,
@@ -45,8 +46,100 @@ const userMarkerIcon = L.divIcon({
   iconAnchor: [12, 12]
 });
 
+// Translation Lookup Table
+const i18n = {
+  en: {
+    "app-title": "MarunnUndo",
+    "app-subtitle": "മരുന്നുണ്ടോ?",
+    "tagline": "Verify medicine stock at nearby pharmacies instantly.",
+    "place-search-placeholder": "Search place/city (e.g., Aluva, Trivandrum)...",
+    "medicine-search-placeholder": "Type medicine name (e.g., Insulin)...",
+    "status-detecting": "Detecting geolocation...",
+    "status-loading-osm": "Loading directly from OpenStreetMap.",
+    "status-osm-failed": "OSM query failed. Check connection.",
+    "status-searching": "Searching...",
+    "status-not-found": "Place not found. Try another name.",
+    "status-search-failed": "Search failed. Check connection.",
+    "btn-scan": "Scan This Area",
+    "results-title": "Nearby Pharmacies",
+    "list-placeholder": "Please allow location access to discover shops.",
+    "list-placeholder-scanning": "Scanning area... Please wait.",
+    "list-placeholder-empty": "No pharmacies found in this area. Try scanning another spot.",
+    "list-placeholder-error": "Unable to fetch pharmacies. Check connection.",
+    "footer-text": "MarunnUndo Made for Kerala.",
+    "detail-category-ph": "Pharmacy / Medical Store",
+    "detail-whatsapp": "WhatsApp",
+    "detail-directions": "Directions",
+    "detail-copy": "Copy Query",
+    "detail-call": "Call",
+    "detail-address-label": "Address",
+    "detail-phone-label": "Phone (Important)",
+    "detail-hours-label": "Hours",
+    "detail-hours-missing": "Not available",
+    "detail-phone-missing": "Missing phone number",
+    "detail-address-missing": "Address not available",
+    "results-count-suffix": " found",
+    "available": "Available",
+    "missing": "Missing",
+    "copied-toast": "Copied! ✓"
+  },
+  ml: {
+    "app-title": "മരുന്നുണ്ടോ",
+    "app-subtitle": "MarunnUndo?",
+    "tagline": "സമീപത്തുള്ള ഫാർമസികളിൽ മരുന്ന് സ്റ്റോക്ക് ഉണ്ടോ എന്ന് പരിശോധിക്കുക.",
+    "place-search-placeholder": "സ്ഥലം തെരയുക (ഉദാ: ആലുവ, തിരുവനന്തപുരം)...",
+    "medicine-search-placeholder": "മരുന്നിന്റെ പേര് നൽകുക (ഉദാ: Insulin)...",
+    "status-detecting": "നിങ്ങളുടെ ലൊക്കേഷൻ കണ്ടെത്തുന്നു...",
+    "status-loading-osm": "OpenStreetMap-ൽ നിന്നും ലോഡ് ചെയ്യുന്നു.",
+    "status-osm-failed": "ലൊക്കേഷൻ കണ്ടെത്താൻ സാധിച്ചില്ല. കണക്ഷൻ പരിശോധിക്കുക.",
+    "status-searching": "തിരയുന്നു...",
+    "status-not-found": "സ്ഥലം കണ്ടെത്താനായില്ല. മറ്റൊന്ന് ശ്രമിക്കുക.",
+    "status-search-failed": "തിരച്ചിൽ പരാജയപ്പെട്ടു. കണക്ഷൻ പരിശോധിക്കുക.",
+    "btn-scan": "ഈ ഭാഗം പരിശോധിക്കുക",
+    "results-title": "സമീപത്തുള്ള ഫാർമസികൾ",
+    "list-placeholder": "സ്ഥലങ്ങൾ കാണാൻ ലൊക്കേഷൻ അനുമതി നൽകുക.",
+    "list-placeholder-scanning": "പരിശോധിക്കുന്നു... ദയവായി കാത്തിരിക്കുക.",
+    "list-placeholder-empty": "ഈ ഭാഗത്ത് ഫാർമസികൾ കണ്ടെത്താനായില്ല. മറ്റൊരിടത്ത് ശ്രമിക്കുക.",
+    "list-placeholder-error": "ഫാർമസികൾ ലഭ്യമാക്കാൻ സാധിച്ചില്ല. ഇന്റർനെറ്റ് പരിശോധിക്കുക.",
+    "footer-text": "മരുന്നുണ്ടോ - കേരളത്തിനായി നിർമ്മിച്ചത്.",
+    "detail-category-ph": "ഫാർമസി / മെഡിക്കൽ സ്റ്റോർ",
+    "detail-whatsapp": "വാട്സാപ്പ്",
+    "detail-directions": "വഴി കാണിക്കുക",
+    "detail-copy": "കോപ്പി ചെയ്യുക",
+    "detail-call": "വിളിക്കുക",
+    "detail-address-label": "മേൽവിലാസം",
+    "detail-phone-label": "ഫോൺ നമ്പർ",
+    "detail-hours-label": "പ്രവർത്തന സമയം",
+    "detail-hours-missing": "ലഭ്യമല്ല",
+    "detail-phone-missing": "ഫോൺ നമ്പർ ലഭ്യമല്ല",
+    "detail-address-missing": "മേൽവിലാസം ലഭ്യമല്ല",
+    "results-count-suffix": " എണ്ണം കണ്ടെത്തി",
+    "available": "ലഭ്യമാണ്",
+    "missing": "ലഭ്യമല്ല",
+    "copied-toast": "കോപ്പി ചെയ്തു! ✓"
+  }
+};
+
+// State Variables for Lang/Theme
+let currentLang = 'en';
+try {
+  currentLang = localStorage.getItem('marunnundo_lang') || 'en';
+} catch (e) {
+  console.warn('localStorage read failed:', e);
+}
+
+let currentTheme = 'light';
+try {
+  currentTheme = localStorage.getItem('marunnundo_theme') || 'light';
+} catch (e) {
+  console.warn('localStorage read failed:', e);
+}
+
 // App Initialization
-window.addEventListener('DOMContentLoaded', () => {
+function initApp() {
+  applyTheme(currentTheme);
+  translatePage(currentLang);
+  
   initMap(userCoords.lat, userCoords.lon);
   requestUserLocation();
   
@@ -58,18 +151,119 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   });
   btnScan.addEventListener('click', handleManualScan);
-});
+  
+  // Theme Toggle Click
+  const btnTheme = document.getElementById('btn-theme');
+  if (btnTheme) {
+    btnTheme.addEventListener('click', () => {
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+    });
+  }
+  
+  // Language Toggle Click
+  const btnLang = document.getElementById('btn-lang');
+  if (btnLang) {
+    btnLang.addEventListener('click', () => {
+      const nextLang = currentLang === 'en' ? 'ml' : 'en';
+      translatePage(nextLang);
+      
+      // Re-render stores to update localized text
+      renderStores(allStores);
+    });
+  }
+  
+  // Close details panel listener
+  const btnCloseDetail = document.getElementById('btn-close-detail');
+  if (btnCloseDetail) {
+    btnCloseDetail.addEventListener('click', hideStoreDetails);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+
+// Apply theme to document element
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.setAttribute('data-theme', theme);
+  
+  const sunIcon = document.querySelector('#btn-theme .sun-icon');
+  const moonIcon = document.querySelector('#btn-theme .moon-icon');
+  
+  if (theme === 'dark') {
+    if (sunIcon) sunIcon.style.display = 'block';
+    if (moonIcon) moonIcon.style.display = 'none';
+  } else {
+    if (sunIcon) sunIcon.style.display = 'none';
+    if (moonIcon) moonIcon.style.display = 'block';
+  }
+  
+  try {
+    localStorage.setItem('marunnundo_theme', theme);
+  } catch (e) {
+    console.warn('localStorage write failed:', e);
+  }
+}
+
+// Translate page tags
+function translatePage(lang) {
+  currentLang = lang;
+  document.documentElement.setAttribute('lang', lang);
+  
+  const elements = document.querySelectorAll('[data-i18n]');
+  elements.forEach(elem => {
+    const key = elem.getAttribute('data-i18n');
+    if (i18n[lang] && i18n[lang][key]) {
+      elem.textContent = i18n[lang][key];
+    }
+  });
+  
+  // Placeholders
+  const placeSearch = document.getElementById('place-search');
+  if (placeSearch && i18n[lang] && i18n[lang]['place-search-placeholder']) {
+    placeSearch.placeholder = i18n[lang]['place-search-placeholder'];
+  }
+  
+  const medicineSearch = document.getElementById('medicine-search');
+  if (medicineSearch && i18n[lang] && i18n[lang]['medicine-search-placeholder']) {
+    medicineSearch.placeholder = i18n[lang]['medicine-search-placeholder'];
+  }
+  
+  // Language button label
+  const langLabel = document.querySelector('#btn-lang .lang-label');
+  if (langLabel) {
+    langLabel.textContent = lang === 'en' ? 'മലയാളം' : 'English';
+  }
+  
+  // Update list placeholder text dynamically
+  if (allStores.length === 0) {
+    const isScanning = listPlaceholder.textContent.includes("Scanning") || listPlaceholder.textContent.includes("പരിശോധിക്കുന്നു");
+    if (isScanning) {
+      listPlaceholder.textContent = i18n[lang]['list-placeholder-scanning'];
+    } else {
+      listPlaceholder.textContent = i18n[lang]['list-placeholder'];
+    }
+  }
+  
+  try {
+    localStorage.setItem('marunnundo_lang', lang);
+  } catch (e) {
+    console.warn('localStorage write failed:', e);
+  }
+}
 
 // Initialize Leaflet Map
 function initMap(lat, lon) {
-  // CartoDB Positron: Clean, minimal light grey & white tiles
   const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
     subdomains: 'abcd',
     maxZoom: 20
   });
 
-  // Esri World Imagery: Beautiful, high-resolution satellite imagery
   const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
     maxZoom: 19
@@ -80,7 +274,6 @@ function initMap(lat, lon) {
     layers: [streetLayer]
   }).setView([lat, lon], 14);
   
-  // Reposition zoom control to bottom right
   L.control.zoom({
     position: 'bottomright'
   }).addTo(map);
@@ -127,11 +320,9 @@ function initMap(lat, lon) {
       
       const updateControl = () => {
         if (currentMode === 'street') {
-          // Show Satellite thumbnail preview
           img.style.backgroundImage = "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/30/45')";
           label.textContent = 'Satellite';
         } else {
-          // Show Map thumbnail preview
           img.style.backgroundImage = "url('https://a.basemaps.cartocdn.com/light_all/6/30/45.png')";
           label.textContent = 'Map';
         }
@@ -141,7 +332,6 @@ function initMap(lat, lon) {
       
       L.DomEvent.disableClickPropagation(container);
       
-      // Interactive scale on hover
       L.DomEvent.on(container, 'mouseover', () => {
         container.style.transform = 'scale(1.06)';
         container.style.borderColor = '#1a73e8';
@@ -175,8 +365,8 @@ function initMap(lat, lon) {
     userCoords.lat = e.latlng.lat;
     userCoords.lon = e.latlng.lng;
     
-    updateStatus("scanning", "Scanning selected location...");
-    coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Selected)`;
+    updateStatus("scanning", i18n[currentLang]["status-searching"]);
+    coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
     
     updateUserMarker(userCoords.lat, userCoords.lon);
     fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
@@ -185,29 +375,27 @@ function initMap(lat, lon) {
 
 // Request Geolocation from Browser
 function requestUserLocation() {
-  statusText.textContent = "Detecting your real location...";
+  statusText.textContent = i18n[currentLang]["status-detecting"];
   
   if (!navigator.geolocation) {
-    updateStatus("denied", "Geolocation not supported by browser.");
+    updateStatus("denied", "Geolocation not supported");
     fallbackToDefaultLocation();
     return;
   }
   
-  // First attempt: High accuracy (GPS/Wi-Fi positioning)
   navigator.geolocation.getCurrentPosition(
     (position) => {
       usePosition(position, "Real Location");
     },
     (error) => {
       console.warn("High-accuracy geolocation failed, trying fast low-accuracy...", error.message);
-      // Second attempt: Low accuracy (IP address estimation)
       navigator.geolocation.getCurrentPosition(
         (position) => {
           usePosition(position, "Approx Location");
         },
         (lowAccError) => {
           console.warn("Low-accuracy geolocation failed, using fallback...", lowAccError.message);
-          updateStatus("denied", "Location access denied. Using fallback.");
+          updateStatus("denied", "Location access denied.");
           fallbackToDefaultLocation();
         },
         { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
@@ -221,21 +409,16 @@ function usePosition(position, label) {
   userCoords.lat = position.coords.latitude;
   userCoords.lon = position.coords.longitude;
   
-  updateStatus("active", `${label} synchronized`);
+  updateStatus("active", i18n[currentLang]["status-loading-osm"]);
   coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
   
-  // Update User Marker on Map
   updateUserMarker(userCoords.lat, userCoords.lon);
   map.setView([userCoords.lat, userCoords.lon], 14);
   
-  // Enable Manual Scan Button
   btnScan.removeAttribute('disabled');
-  
-  // Fetch Nearby Stores
   fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
 }
 
-// Fallback to Kochi coords if location fails
 function fallbackToDefaultLocation() {
   coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Default)`;
   updateUserMarker(userCoords.lat, userCoords.lon);
@@ -248,7 +431,7 @@ function fallbackToDefaultLocation() {
 async function searchLocation(query) {
   if (!query) return;
   
-  updateStatus("scanning", `Searching for "${query}"...`);
+  updateStatus("scanning", i18n[currentLang]["status-searching"]);
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query + ", Kerala, India")}`;
     const response = await fetch(url, {
@@ -268,19 +451,18 @@ async function searchLocation(query) {
       userCoords.lon = lon;
       
       const displayName = results[0].display_name.split(',')[0];
-      updateStatus("active", `Showing: ${displayName}`);
-      coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Searched)`;
+      updateStatus("active", displayName);
+      coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
       
-      // Update map center and search
       updateUserMarker(userCoords.lat, userCoords.lon);
       map.setView([userCoords.lat, userCoords.lon], 14);
       fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
     } else {
-      updateStatus("denied", "Place not found. Try another name.");
+      updateStatus("denied", i18n[currentLang]["status-not-found"]);
     }
   } catch (error) {
     console.error("Geocoding failed:", error);
-    updateStatus("denied", "Search failed. Check connection.");
+    updateStatus("denied", i18n[currentLang]["status-search-failed"]);
   }
 }
 
@@ -302,34 +484,51 @@ function updateStatus(type, text) {
 function updateUserMarker(lat, lon) {
   if (userMarker) {
     userMarker.setLatLng([lat, lon]);
-    userMarker.setPopupContent("<b>Scan Center Location</b>");
   } else {
     userMarker = L.marker([lat, lon], { icon: userMarkerIcon }).addTo(map);
-    userMarker.bindPopup("<b>Scan Center Location</b>").openPopup();
   }
 }
 
-// Fetch pharmacies directly from OSM Overpass (No-Database / Serverless Mode)
+// Filter out unnamed or generic placeholder names
+function isValidPharmacyName(name) {
+  if (!name) return false;
+  const lower = name.toLowerCase().trim();
+  
+  if (lower.length < 2) return false;
+  
+  const placeholders = [
+    "unnamed", "unnamed pharmacy", "pharmacy", "medical store", "medicals",
+    "മെഡിക്കൽ സ്റ്റോർ", "മെഡിക്കൽസ്", "ഫാർമസി", "കട", "ഷോപ്പ്", "மருந்தகம்"
+  ];
+  
+  if (placeholders.includes(lower)) return false;
+  if (lower.startsWith("unnamed")) return false;
+  if (/^\d+$/.test(lower)) return false;
+  
+  return true;
+}
+
+// Fetch pharmacies directly from OSM Overpass
 async function fetchNearbyPharmacies(lat, lon) {
-  updateStatus("scanning", "Scanning nearby pharmacies...");
-  listPlaceholder.textContent = "Scanning area... Please wait.";
+  updateStatus("scanning", i18n[currentLang]["status-searching"]);
+  listPlaceholder.textContent = i18n[currentLang]["list-placeholder-scanning"];
   pharmaciesList.style.display = "none";
   listPlaceholder.style.display = "block";
+  hideStoreDetails();
   
   try {
     const osmStores = await fetchDirectFromOverpass(lat, lon);
     allStores = osmStores;
     console.log(`Loaded ${allStores.length} stores directly from Overpass API.`);
     renderStores(allStores);
-    updateStatus("active", "Loaded directly from OpenStreetMap.");
+    updateStatus("active", i18n[currentLang]["status-loading-osm"]);
   } catch (error) {
     console.error("Direct Overpass fetch failed:", error);
-    updateStatus("denied", "OSM query failed. Check your internet connection.");
-    listPlaceholder.textContent = "Unable to fetch pharmacies. Check your internet connection.";
+    updateStatus("denied", i18n[currentLang]["status-osm-failed"]);
+    listPlaceholder.textContent = i18n[currentLang]["list-placeholder-error"];
   }
 }
 
-// Fetch directly from OSM Overpass (No-Database / Backend-less Mode fallback)
 async function fetchDirectFromOverpass(lat, lon) {
   const radiusMeters = 5000; // 5km
   const query = `
@@ -349,22 +548,26 @@ async function fetchDirectFromOverpass(lat, lon) {
     }
   });
   
-  if (!response.ok) throw new Error("Overpass API server responded with error " + response.status);
+  if (!response.ok) throw new Error("Overpass API server error " + response.status);
   
   const data = await response.json();
   const elements = data.elements || [];
   
-  // Filter out any elements lacking valid coordinates
+  // Filter coordinates and valid names
   const validElements = elements.filter(elem => {
     const lat = elem.lat || (elem.center && elem.center.lat);
     const lon = elem.lon || (elem.center && elem.center.lon);
-    return lat !== undefined && lon !== undefined && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon));
+    const hasCoords = lat !== undefined && lon !== undefined && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lon));
+    if (!hasCoords) return false;
+    
+    const tags = elem.tags || {};
+    const name = tags.name || tags.brand || "";
+    return isValidPharmacyName(name);
   });
   
   return validElements.map(elem => {
     const elemLat = elem.lat || (elem.center && elem.center.lat);
     const elemLon = elem.lon || (elem.center && elem.center.lon);
-    
     const tags = elem.tags || {};
     const name = tags.name || tags.brand || "Unnamed Pharmacy";
     
@@ -378,6 +581,7 @@ async function fetchDirectFromOverpass(lat, lon) {
     
     const address = addrParts.length ? addrParts.join(", ") : tags["addr:full"] || "Kerala, India";
     const phone = tags.phone || tags["contact:phone"] || tags["contact:whatsapp"] || "";
+    const opening_hours = tags.opening_hours || "";
     
     const distance = calculateHaversineDistance(lat, lon, elemLat, elemLon);
     
@@ -388,13 +592,14 @@ async function fetchDirectFromOverpass(lat, lon) {
       longitude: parseFloat(elemLon),
       address: address,
       phone: phone,
-      source: "Ecosystem Sync",
+      opening_hours: opening_hours,
+      source: "Verified OSM",
       distance: parseFloat(distance.toFixed(2))
     };
   }).sort((a, b) => a.distance - b.distance);
 }
 
-// Calculate Haversine distance in client browser
+// Calculate Haversine distance
 function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Earth's radius in km
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -407,104 +612,61 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-
-
-// Render pharmacies on map and list
+// Render pharmacies list and markers
 function renderStores(storesList) {
-  // Clear existing markers
   storeMarkers.forEach(m => map.removeLayer(m));
   storeMarkers = [];
   
   if (storesList.length === 0) {
-    listPlaceholder.textContent = "No pharmacies found in this area. Try scanning another spot.";
+    listPlaceholder.textContent = i18n[currentLang]["list-placeholder-empty"];
     listPlaceholder.style.display = "block";
     pharmaciesList.style.display = "none";
-    resultsCount.textContent = "0 found";
+    resultsCount.textContent = "0" + i18n[currentLang]["results-count-suffix"];
     return;
   }
   
   listPlaceholder.style.display = "none";
   pharmaciesList.style.display = "block";
   pharmaciesList.innerHTML = "";
-  resultsCount.textContent = `${storesList.length} found`;
+  resultsCount.textContent = storesList.length + i18n[currentLang]["results-count-suffix"];
   
-  // Get active medicine name search
   const medicineName = searchInput.value.trim();
   
-  storesList.forEach((store, index) => {
-    // Add Marker to Map
+  storesList.forEach((store) => {
+    // Add Marker
     const marker = L.marker([store.latitude, store.longitude], { icon: blueMarkerIcon })
                     .addTo(map);
     
-    // Bind Popup content
-    const popupContent = createPopupHTML(store, medicineName);
-    marker.bindPopup(popupContent);
+    marker.on('click', () => {
+      showStoreDetails(store);
+    });
+    
     storeMarkers.push(marker);
     
-    // Add List Item
-    const li = createListItemHTML(store, index, medicineName);
+    // Add List Card
+    const li = createListItemHTML(store, medicineName);
+    
+    // Click listener for the card
+    li.addEventListener('click', (e) => {
+      if (e.target.closest('.card-actions')) {
+        return;
+      }
+      focusStore(store.latitude, store.longitude, store.id);
+    });
+    
     pharmaciesList.appendChild(li);
   });
 }
 
-// Format custom popup content
-function createPopupHTML(store, medicineName) {
-  const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
-  const sourceClass = store.source === "Verified" ? "source-verified" : "source-sync";
-  const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
-  
-  // Custom button behavior based on phone existence
-  let contactBtnHTML = "";
-  if (store.phone) {
-    contactBtnHTML = `
-      <a href="${whatsappUrl}" target="_blank" class="popup-wa-btn">
-        <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.003 5.324 5.328 0 11.859 0c3.161.001 6.136 1.233 8.375 3.474 2.238 2.24 3.467 5.218 3.465 8.385-.005 6.537-5.33 11.861-11.86 11.861-2.008-.002-3.98-.513-5.732-1.488L0 24zm6.549-2.834c1.659.985 3.298 1.487 5.247 1.489 5.485 0 9.948-4.462 9.952-9.948.002-2.658-1.03-5.158-2.905-7.034C17.025 3.797 14.53 2.766 11.862 2.765c-5.487 0-9.95 4.463-9.954 9.95-.001 1.849.48 3.655 1.393 5.243l-.95 3.468 3.706-.96zm12.593-7.558c-.347-.174-2.057-1.011-2.375-1.127-.318-.116-.549-.174-.78.174-.231.347-.894 1.127-1.096 1.358-.202.231-.404.26-.75.087-.347-.174-1.464-.539-2.787-1.72-1.03-1.03-1.724-2.148-1.926-2.494-.203-.347-.022-.534.151-.708.156-.156.347-.405.52-.607.173-.203.231-.347.347-.578.115-.231.057-.434-.029-.607-.087-.173-.78-1.879-1.069-2.572-.28-.674-.564-.582-.78-.593-.202-.011-.434-.012-.665-.012-.231 0-.607.087-.924.434-.318.347-1.213 1.185-1.213 2.89 0 1.705 1.242 3.352 1.416 3.583.173.231 2.445 3.734 5.922 5.234.827.357 1.472.569 1.975.729.831.264 1.587.227 2.185.138.666-.1 2.057-.838 2.346-1.647.289-.809.289-1.502.202-1.647-.087-.145-.318-.232-.665-.405z"/>
-        </svg>
-        WhatsApp Verification
-      </a>
-    `;
-  } else {
-    const copyText = buildStockMessage(store.name, medicineName);
-    contactBtnHTML = `
-      <button onclick="copyToClipboard('${escapeJS(copyText)}', this)" class="popup-wa-btn secondary-btn">
-        Copy Stock Query Message
-      </button>
-    `;
-  }
-  
-  return `
-    <div class="store-popup">
-      <div class="popup-title-row">
-        <h4>${store.name}</h4>
-        <span class="badge ${sourceClass}">${store.source}</span>
-      </div>
-      <p class="popup-distance">📍 ${store.distance} km away</p>
-      <p class="popup-addr">${store.address}</p>
-      <div class="popup-actions-row">
-        ${contactBtnHTML}
-        <a href="${googleSearchUrl}" target="_blank" class="popup-gmaps-btn">
-          <svg class="gmaps-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;">
-            <circle cx="12" cy="10" r="3"></circle>
-            <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
-          </svg>
-          Google Details
-        </a>
-      </div>
-    </div>
-  `;
-}
-
-// Format list item
-function createListItemHTML(store, index, medicineName) {
+// Format list card item
+function createListItemHTML(store, medicineName) {
   const li = document.createElement('li');
   li.className = 'pharmacy-card';
   
   const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
   const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
-  const sourceClass = store.source === "Verified" ? "source-verified" : "source-sync";
+  const sourceClass = "source-verified";
   
-  // Custom button depending on phone number
   let actionHTML = "";
   if (store.phone) {
     actionHTML = `
@@ -519,23 +681,25 @@ function createListItemHTML(store, index, medicineName) {
     const copyText = buildStockMessage(store.name, medicineName);
     actionHTML = `
       <button onclick="copyToClipboard('${escapeJS(copyText)}', this)" class="card-wa-btn copy-btn">
-        <span>Copy Query</span>
+        <span>${i18n[currentLang]["detail-copy"]}</span>
       </button>
     `;
   }
   
+  const statusLabel = store.phone ? i18n[currentLang]["available"] : i18n[currentLang]["missing"];
+  
   li.innerHTML = `
-    <div class="card-body" onclick="focusStore(${store.latitude}, ${store.longitude}, ${index})">
+    <div class="card-body">
       <div class="card-header-row">
         <h4>${store.name}</h4>
         <span class="badge ${sourceClass}">${store.source}</span>
       </div>
-      <p class="card-meta">📍 ${store.distance} km away ${store.phone ? '• 📞 Available' : '• 📞 Missing'}</p>
+      <p class="card-meta">📍 ${store.distance} km away • 📞 ${statusLabel}</p>
       <p class="card-address">${store.address}</p>
     </div>
     <div class="card-actions">
       ${actionHTML}
-      <a href="${googleSearchUrl}" target="_blank" class="card-gmaps-btn" title="View Google Reviews & Details">
+      <a href="${googleSearchUrl}" target="_blank" class="card-gmaps-btn" title="View Google Info">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="10" r="3"></circle>
           <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z"></path>
@@ -550,14 +714,12 @@ function createListItemHTML(store, index, medicineName) {
 
 // Generate pre-filled WhatsApp link
 function buildWhatsAppLink(phone, storeName, medicineName) {
-  // Format phone number (defaults to Indian code if missing country prefix)
   let cleanPhone = (phone || "").replace(/[^\d+]/g, '');
   if (cleanPhone && !cleanPhone.startsWith('+')) {
     if (cleanPhone.length === 10) {
       cleanPhone = '91' + cleanPhone; // Indian prefix
     }
   }
-  
   const textMessage = buildStockMessage(storeName, medicineName);
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(textMessage)}`;
 }
@@ -577,13 +739,23 @@ function escapeJS(str) {
 window.copyToClipboard = function(text, btnElement) {
   navigator.clipboard.writeText(text).then(() => {
     const originalHTML = btnElement.innerHTML;
-    btnElement.innerHTML = `<span>Copied! ✓</span>`;
-    btnElement.classList.add('copied');
-    
-    setTimeout(() => {
-      btnElement.innerHTML = originalHTML;
-      btnElement.classList.remove('copied');
-    }, 2000);
+    const label = btnElement.querySelector('.action-label') || btnElement.querySelector('span');
+    if (label) {
+      const originalText = label.textContent;
+      label.textContent = i18n[currentLang]['copied-toast'];
+      btnElement.classList.add('copied');
+      setTimeout(() => {
+        label.textContent = originalText;
+        btnElement.classList.remove('copied');
+      }, 2000);
+    } else {
+      btnElement.innerHTML = `<span>${i18n[currentLang]['copied-toast']}</span>`;
+      btnElement.classList.add('copied');
+      setTimeout(() => {
+        btnElement.innerHTML = originalHTML;
+        btnElement.classList.remove('copied');
+      }, 2000);
+    }
   }).catch(err => {
     console.error("Clipboard copy failed:", err);
   });
@@ -592,29 +764,93 @@ window.copyToClipboard = function(text, btnElement) {
 // Filter stores locally on text input change
 function filterStores() {
   const query = searchInput.value.toLowerCase().trim();
-  
-  // Filter all loaded stores matching name or address
   const filtered = allStores.filter(store => {
     return store.name.toLowerCase().includes(query) || 
            store.address.toLowerCase().includes(query) ||
            (store.phone && store.phone.includes(query));
   });
-  
-  // Update map markers and list items
   renderStores(filtered);
 }
 
 // Fly map camera to store when clicking card
-window.focusStore = function(lat, lon, index) {
+window.focusStore = function(lat, lon, id) {
   map.flyTo([lat, lon], 16, { animate: true, duration: 1.5 });
-  
-  // Open the marker's popup
-  if (storeMarkers[index]) {
-    setTimeout(() => {
-      storeMarkers[index].openPopup();
-    }, 1500);
+  const store = allStores.find(s => s.id === id);
+  if (store) {
+    showStoreDetails(store);
   }
 };
+
+// Slide-in Detail Panel Logic
+function showStoreDetails(store) {
+  const detailPanel = document.getElementById('detail-panel');
+  if (!detailPanel) return;
+  
+  document.getElementById('detail-store-name').textContent = store.name;
+  
+  const categoryElem = document.getElementById('detail-category');
+  if (categoryElem) {
+    categoryElem.textContent = i18n[currentLang]['detail-category-ph'];
+  }
+  
+  document.getElementById('detail-address').textContent = store.address || i18n[currentLang]['detail-address-missing'];
+  
+  const phoneText = store.phone || i18n[currentLang]['detail-phone-missing'];
+  const phoneElem = document.getElementById('detail-phone');
+  phoneElem.textContent = phoneText;
+  
+  const hoursElem = document.getElementById('detail-hours');
+  hoursElem.textContent = store.opening_hours || i18n[currentLang]['detail-hours-missing'];
+  
+  const btnWhatsapp = document.getElementById('detail-btn-whatsapp');
+  const btnCall = document.getElementById('detail-btn-call');
+  const btnDirections = document.getElementById('detail-btn-directions');
+  const btnCopy = document.getElementById('detail-btn-copy');
+  
+  const medicineName = searchInput.value.trim();
+  
+  if (store.phone) {
+    btnWhatsapp.removeAttribute('disabled');
+    btnWhatsapp.classList.remove('disabled');
+    btnWhatsapp.onclick = () => {
+      const whatsappUrl = buildWhatsAppLink(store.phone, store.name, medicineName);
+      window.open(whatsappUrl, '_blank');
+    };
+    
+    btnCall.removeAttribute('disabled');
+    btnCall.classList.remove('disabled');
+    btnCall.onclick = () => {
+      window.location.href = `tel:${store.phone}`;
+    };
+  } else {
+    btnWhatsapp.setAttribute('disabled', 'true');
+    btnWhatsapp.classList.add('disabled');
+    btnWhatsapp.onclick = null;
+    
+    btnCall.setAttribute('disabled', 'true');
+    btnCall.classList.add('disabled');
+    btnCall.onclick = null;
+  }
+  
+  btnDirections.onclick = () => {
+    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(store.name + " " + store.address)}`;
+    window.open(googleSearchUrl, '_blank');
+  };
+  
+  btnCopy.onclick = () => {
+    const copyText = buildStockMessage(store.name, medicineName);
+    copyToClipboard(copyText, btnCopy);
+  };
+  
+  detailPanel.classList.remove('hidden');
+}
+
+function hideStoreDetails() {
+  const detailPanel = document.getElementById('detail-panel');
+  if (detailPanel) {
+    detailPanel.classList.add('hidden');
+  }
+}
 
 // Trigger manual rescan centered on current map position
 function handleManualScan() {
@@ -622,11 +858,7 @@ function handleManualScan() {
   userCoords.lat = center.lat;
   userCoords.lon = center.lng;
   
-  coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)} (Scanned)`;
-  
-  // Update User Marker to new map center
+  coordDisplay.textContent = `${userCoords.lat.toFixed(4)}, ${userCoords.lon.toFixed(4)}`;
   updateUserMarker(userCoords.lat, userCoords.lon);
-  
-  // Trigger scan query
   fetchNearbyPharmacies(userCoords.lat, userCoords.lon);
 }
