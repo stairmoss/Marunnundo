@@ -144,6 +144,10 @@ function initApp() {
   requestUserLocation();
   
   // Set up event listeners
+  const statusIndicator = document.querySelector('.status-indicator');
+  if (statusIndicator) {
+    statusIndicator.addEventListener('click', requestUserLocation);
+  }
   searchInput.addEventListener('input', filterStores);
   placeInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -379,6 +383,9 @@ function requestUserLocation() {
   
   if (!navigator.geolocation) {
     updateStatus("denied", "Geolocation not supported");
+    alert(currentLang === 'ml' ? 
+      "ഈ ഫയൽ സെർവറിലല്ല ഓപ്പൺ ചെയ്തിരിക്കുന്നത്. ദയവായി ഇത് Vercel ലേക്ക് അപ്‌ലോഡ് ചെയ്യുക അല്ലെങ്കിൽ ഒരു ലോക്കൽ സെർവറിൽ റൺ ചെയ്യുക." :
+      "Your browser is blocking geolocation because this file is opened locally (via file://). Please open it via a web server (like Vercel, Netlify, or VS Code Live Server) to allow GPS location access!");
     fallbackToDefaultLocation();
     return;
   }
@@ -388,20 +395,30 @@ function requestUserLocation() {
       usePosition(position, "Real Location");
     },
     (error) => {
-      console.warn("High-accuracy geolocation failed, trying fast low-accuracy...", error.message);
+      console.warn("High-accuracy geolocation failed...", error.message);
+      if (error.code === 1) { // PERMISSION_DENIED
+        updateStatus("denied", currentLang === 'ml' ? "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു" : "Location permission denied.");
+        alert(currentLang === 'ml' ? 
+          "ലൊക്കേഷൻ അനുമതി നിഷേധിച്ചു. ദയവായി നിങ്ങളുടെ ബ്രൗസറിന്റെ അഡ്രസ്സ് ബാറിലെ ലോക്ക് (Lock) ഐക്കണിൽ ക്ലിക്ക് ചെയ്ത് ലൊക്കേഷൻ അനുവദിക്കുക (Allow), ശേഷം വീണ്ടും ശ്രമിക്കുക." : 
+          "Location permission denied. Please click the lock icon in your browser's address bar to change Location to 'Allow', then tap the status bar to retry!");
+        fallbackToDefaultLocation();
+        return;
+      }
+      
+      console.log("Trying low-accuracy fallback...");
       navigator.geolocation.getCurrentPosition(
         (position) => {
           usePosition(position, "Approx Location");
         },
         (lowAccError) => {
           console.warn("Low-accuracy geolocation failed, using fallback...", lowAccError.message);
-          updateStatus("denied", "Location access denied.");
+          updateStatus("denied", currentLang === 'ml' ? "ലൊക്കേഷൻ പരാജയപ്പെട്ടു" : "Location detection failed.");
           fallbackToDefaultLocation();
         },
-        { enableHighAccuracy: false, timeout: 4000, maximumAge: 600000 }
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
       );
     },
-    { enableHighAccuracy: true, timeout: 6000, maximumAge: 60000 }
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
   );
 }
 
