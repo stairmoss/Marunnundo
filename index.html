@@ -3,233 +3,412 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MarunnUndo - Kerala Proximity Pharmacy Finder</title>
-  <meta name="description" content="Verify medicine stock at nearby pharmacies instantly. Built for Kerala, India.">
+  <title>MarunnUndo | Kerala Proximity Pharmacy Finder</title>
   
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- SEO Optimization -->
+  <meta name="description" content="MarunnUndo is a fast, privacy-friendly proximity pharmacy locator built for Kerala. Find medicines, contact medical stores, and get directions instantly.">
+  <meta name="keywords" content="MarunnUndo, pharmacy finder, Kerala medical stores, medicine stock locator, open source pharmacy app">
+  <meta name="author" content="Adarsh (stairmoss)">
+  <meta property="og:title" content="MarunnUndo | Proximity Pharmacy Finder">
+  <meta property="og:description" content="Find nearby pharmacies in Kerala instantly without compromising your privacy.">
+  <meta property="og:type" content="website">
+  
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Leaflet CSS Dependency -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-        
-  <!-- Custom CSS Styles -->
-  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Smooth Scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #0f172a;
+      --text-muted: #64748b;
+      --primary-blue: #2563eb;
+      --primary-blue-hover: #1d4ed8;
+      --light-blue: #eff6ff;
+      --border-color: #e2e8f0;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    /* Navigation */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 5%;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-color);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-logo-img {
+      height: 36px;
+      width: auto;
+      border-radius: 6px;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+    
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-color);
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+    
+    .nav-links a:hover {
+      color: var(--primary-blue);
+    }
+    
+    .nav-btn {
+      background: var(--primary-blue);
+      color: white !important;
+      padding: 0.6rem 1.5rem;
+      border-radius: 999px;
+      transition: background 0.3s ease;
+    }
+    
+    .nav-btn:hover {
+      background: var(--primary-blue-hover);
+    }
+
+    /* Sections */
+    section {
+      padding: 6rem 5%;
+    }
+    
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: var(--text-color);
+    }
+    
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 4rem;
+      font-size: 1.125rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      /* Minimalist Background Image with Overlay */
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(239, 246, 255, 0.95)), 
+                  url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80') center/cover no-repeat;
+      padding-top: 8rem;
+    }
+    
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+      line-height: 1.2;
+      max-width: 800px;
+    }
+    
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      max-width: 600px;
+    }
+    
+    .explore-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2.5rem;
+      background-color: var(--primary-blue);
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1.125rem;
+      border-radius: 999px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    }
+    
+    .explore-btn:hover {
+      background-color: var(--primary-blue-hover);
+      box-shadow: 0 6px 24px rgba(37, 99, 235, 0.4);
+      transform: translateY(-2px);
+    }
+
+    /* About Section */
+    .about {
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .about-content {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+      text-align: left;
+    }
+
+    .about-content p {
+      margin-bottom: 1.5rem;
+    }
+
+    /* Contributors Section */
+    .contributors {
+      background-color: var(--light-blue);
+    }
+
+    .contributors-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    
+    .contributor-card {
+      background: #ffffff;
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.05);
+      text-align: center;
+      width: 300px;
+      border: 1px solid var(--border-color);
+      transition: transform 0.3s ease;
+    }
+
+    .contributor-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    .profile-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 1rem;
+      border: 3px solid var(--light-blue);
+    }
+    
+    .contributor-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    
+    .contributor-role {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .contribute-action {
+      text-align: center;
+      margin-top: 3rem;
+    }
+
+    .contribute-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.8rem 2rem;
+      background-color: #ffffff;
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: 600;
+      border: 2px solid var(--border-color);
+      border-radius: 999px;
+      transition: all 0.3s ease;
+    }
+
+    .contribute-btn:hover {
+      border-color: var(--text-color);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background: transparent;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    /* Mobile Responsive */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+    }
+    .hamburger span {
+      width: 25px;
+      height: 3px;
+      background: var(--text-color);
+      transition: all 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: flex;
+      }
+      .nav-links {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.98);
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+      }
+      .nav-links.active {
+        display: flex;
+      }
+      .nav-btn {
+        text-align: center;
+      }
+      section {
+        padding: 4rem 5%;
+      }
+      .hero h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
-  <!-- App Container -->
-  <div class="app-container">
+  <!-- Navigation -->
+  <nav>
+    <a href="#" class="logo">
+      <img src="logo.png" alt="MarunnUndo Logo" class="nav-logo-img" onerror="this.style.display='none'">
+      MarunnUndo
+    </a>
+    <div class="hamburger" id="hamburger">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="nav-links" id="nav-links">
+      <a href="#about">About</a>
+      <a href="#contributors">Contributors</a>
+      <a href="app.html" class="nav-btn">Explore App</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <h1>Find medicines near you, instantly.</h1>
+    <p>A fast, reliable, and privacy-focused pharmacy locator built to help you discover nearby medical stores without any hassle.</p>
+    <a href="app.html" class="explore-btn">
+      Explore the app
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </a>
+  </section>
+
+  <!-- About Section -->
+  <section class="about" id="about">
+    <h2 class="section-title">About MarunnUndo</h2>
+    <p class="section-subtitle">Empowering Kerala with accessible healthcare information.</p>
+    <div class="about-content">
+      <p>MarunnUndo (Malayalam for "Do you have the medicine?") was born out of a simple need: to make finding local pharmacies effortless. During emergencies or late-night medicine runs, locating an open pharmacy with stock can be stressful.</p>
+      <p>We built this platform using open mapping solutions to guarantee your privacy while giving you real-time proximity-based results. Contact pharmacies directly via WhatsApp, get precise driving directions, and save crucial time when it matters the most.</p>
+    </div>
+  </section>
+
+  <!-- Contributors Section -->
+  <section class="contributors" id="contributors">
+    <h2 class="section-title">Contributors</h2>
+    <p class="section-subtitle">The people behind the open-source mission.</p>
     
-    <!-- Floating Search & Info Panel -->
-    <div class="floating-panel">
-      <!-- Header -->
-      <header class="panel-header">
-        <div class="logo-area">
-          <img src="logo.png" class="app-logo" alt="MarunnUndo Logo">
-          <div class="title-wrap">
-            <h1 data-i18n="app-title">MarunnUndo</h1>
-            <span class="sub-title" data-i18n="app-subtitle">മരുന്നുണ്ടോ?</span>
-          </div>
-          
-          <div class="header-actions-group">
-            <button id="btn-theme" class="header-action-btn" title="Toggle Theme" aria-label="Toggle Theme">
-              <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-              <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-              </svg>
-            </button>
-            <button id="btn-lang" class="header-action-btn" title="Change Language" aria-label="Change Language">
-              <span class="lang-label">മലയാളം</span>
-            </button>
-          </div>
-        </div>
-        <p class="tagline" data-i18n="tagline">Verify medicine stock at nearby pharmacies instantly.</p>
-      </header>
-
-      <!-- Search Box Section -->
-      <div class="search-section">
-        <!-- Place Search Input -->
-        <div class="input-container" style="margin-bottom: 12px;">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-            <circle cx="12" cy="10" r="3"></circle>
-          </svg>
-          <input type="text" id="place-search" placeholder="Search place/city (e.g., Aluva, Trivandrum)..." autocomplete="off">
-        </div>
-        <!-- Medicine Search / Filter Input -->
-        <div class="input-container">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z" 
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <input type="text" id="medicine-search" placeholder="Type medicine name (e.g., Insulin)..." autocomplete="off">
-        </div>
+    <div class="contributors-grid">
+      <!-- Creator -->
+      <div class="contributor-card">
+        <img src="https://github.com/stairmoss.png" alt="Adarsh Profile Photo" class="profile-img">
+        <h3 class="contributor-name">Adarsh</h3>
+        <p class="contributor-role">Creator & Lead Developer</p>
       </div>
-
-      <!-- Live Location & Scan Info -->
-      <div class="status-section">
-        <div class="status-indicator">
-          <span class="status-dot pulse" id="location-dot"></span>
-          <span id="status-text" data-i18n="status-detecting">Detecting geolocation...</span>
-        </div>
-        <div class="coord-info" id="coord-display">--.----, --.----</div>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="actions-section">
-        <button id="btn-scan" class="action-btn" disabled>
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.657 16.657L13.414 20.9C12.633 21.681 11.367 21.681 10.586 20.9L6.343 16.657C4.586 14.9 4.586 12.043 6.343 10.286C8.1 8.529 10.957 8.529 12.714 10.286L17.657 15.229C18.438 16.01 18.438 17.276 17.657 18.057C16.876 18.838 15.61 18.838 14.829 18.057L11.293 14.522C11.105 14.334 10.795 14.334 10.607 14.522C10.419 14.71 10.419 15.02 10.607 15.208L14.143 18.743C15.705 20.305 18.238 20.305 19.8 18.743C21.362 17.181 21.362 14.648 19.8 13.086L14.857 8.143C12.318 5.604 8.204 5.604 5.665 8.143C3.126 10.682 3.126 14.796 5.665 17.335L9.908 21.578M15 3H21M21 3V9M21 3L14 10" 
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <span data-i18n="btn-scan">Scan This Area</span>
-        </button>
-      </div>
-
-      <!-- Stores List Container -->
-      <div class="results-container">
-        <div class="results-header">
-          <h3 data-i18n="results-title">Nearby Pharmacies</h3>
-          <span class="badge" id="results-count">0 found</span>
-        </div>
-        
-
-
-        <div class="list-placeholder" id="list-placeholder" data-i18n="list-placeholder">
-          Please allow location access to discover shops.
-        </div>
-        <ul class="pharmacies-list" id="pharmacies-list">
-          <!-- Populated dynamically via JS -->
-        </ul>
-      </div>
-
-      <!-- Footer / Info -->
-      <footer class="panel-footer">
-        <span data-i18n="footer-text">MarunnUndo Made for Kerala.</span>
-      </footer>
+      <!-- Add more contributors here in the future -->
     </div>
 
-    <!-- Leaflet Map Div -->
-    <div id="map"></div>
-
-  </div>
-
-  <!-- Pharmacy Detail Panel (Slides in from the right / bottom) -->
-  <div id="detail-panel" class="floating-detail-panel hidden">
-    <div class="detail-header-image">
-      <button id="btn-close-detail" class="detail-close-btn" aria-label="Close details">&times;</button>
-      <div class="header-image-placeholder">
-        <svg class="med-cross-banner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="contribute-action">
+      <a href="https://github.com/stairmoss/Marunnundo" target="_blank" class="contribute-btn">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
         </svg>
-        <span class="banner-badge">PHARMACY</span>
-      </div>
+        Contribute on GitHub
+      </a>
     </div>
-    <div class="detail-content">
+  </section>
 
-      <!-- Store name + category + rating + enrich status -->
-      <div class="detail-main-info">
-        <h2 id="detail-store-name">--</h2>
-        <p id="detail-category" class="detail-subtext" data-i18n="detail-category-ph">Pharmacy / Medical Store</p>
-      </div>
+  <!-- Footer -->
+  <footer>
+    <p>Made with ❤️ for Kerala.</p>
+  </footer>
 
-      <!-- Action circle buttons -->
-      <div class="detail-actions-row">
-        <button id="detail-btn-whatsapp" class="detail-action-circle">
-          <div class="circle-icon wa">
-            <svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.003 5.324 5.328 0 11.859 0c3.161.001 6.136 1.233 8.375 3.474 2.238 2.24 3.467 5.218 3.465 8.385-.005 6.537-5.33 11.861-11.86 11.861-2.008-.002-3.98-.513-5.732-1.488L0 24zm6.549-2.834c1.659.985 3.298 1.487 5.247 1.489 5.485 0 9.948-4.462 9.952-9.948.002-2.658-1.03-5.158-2.905-7.034C17.025 3.797 14.53 2.766 11.862 2.765c-5.487 0-9.95 4.463-9.954 9.95-.001 1.849.48 3.655 1.393 5.243l-.95 3.468 3.706-.96zm12.593-7.558c-.347-.174-2.057-1.011-2.375-1.127-.318-.116-.549-.174-.78.174-.231.347-.894 1.127-1.096 1.358-.202.231-.404.26-.75.087-.347-.174-1.464-.539-2.787-1.72-1.03-1.03-1.724-2.148-1.926-2.494-.203-.347-.022-.534.151-.708.156-.156.347-.405.52-.607.173-.203.231-.347.347-.578.115-.231.057-.434-.029-.607-.087-.173-.78-1.879-1.069-2.572-.28-.674-.564-.582-.78-.593-.202-.011-.434-.012-.665-.012-.231 0-.607.087-.924.434-.318.347-1.213 1.185-1.213 2.89 0 1.705 1.242 3.352 1.416 3.583.173.231 2.445 3.734 5.922 5.234.827.357 1.472.569 1.975.729.831.264 1.587.227 2.185.138.666-.1 2.057-.838 2.346-1.647.289-.809.289-1.502.202-1.647-.087-.145-.318-.232-.665-.405z"/>
-            </svg>
-          </div>
-          <span class="action-label" data-i18n="detail-whatsapp">WhatsApp</span>
-        </button>
-        <button id="detail-btn-directions" class="detail-action-circle">
-          <div class="circle-icon directions">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="3 11 22 2 13 21 11 13 3 11"/>
-            </svg>
-          </div>
-          <span class="action-label" data-i18n="detail-directions">Directions</span>
-        </button>
+  <script>
+    // Hamburger Menu Toggle
+    document.getElementById('hamburger').addEventListener('click', function() {
+      document.getElementById('nav-links').classList.toggle('active');
+    });
 
-        <button id="detail-btn-call" class="detail-action-circle">
-          <div class="circle-icon call">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-          </div>
-          <span class="action-label" data-i18n="detail-call">Call</span>
-        </button>
-      </div>
-
-      <!-- Info rows: address, phone, hours -->
-      <div class="detail-info-section">
-        <div class="info-item">
-          <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-          <div class="info-text">
-            <span class="info-label" data-i18n="detail-address-label">Address</span>
-            <span id="detail-address">--</span>
-          </div>
-        </div>
-        <div class="info-item highlighted-phone">
-          <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-          </svg>
-          <div class="info-text">
-            <span class="info-label">Phone</span>
-            <span id="detail-phone" class="phone-link">--</span>
-          </div>
-        </div>
-        <div class="info-item">
-          <svg class="info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <div class="info-text">
-            <span class="info-label" data-i18n="detail-hours-label">Hours</span>
-            <span id="detail-hours">--</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Google Business Profile Button -->
-      <button id="detail-btn-google-biz" class="detail-google-biz-btn">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-        </svg>
-        <span>Google Business Profile</span>
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;opacity:0.6">
-          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-          <polyline points="15 3 21 3 21 9"/>
-          <line x1="10" y1="14" x2="21" y2="3"/>
-        </svg>
-      </button>
-
-    </div>
-  </div>
-
-  <!-- Leaflet JS Dependency -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-          
-  <!-- Custom App JS -->
-  <script src="app.js"></script>
+    // Close menu when a link is clicked
+    document.querySelectorAll('.nav-links a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.getElementById('nav-links').classList.remove('active');
+      });
+    });
+  </script>
 </body>
 </html>
